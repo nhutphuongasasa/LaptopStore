@@ -8,8 +8,8 @@ import lombok.*;
 
 import java.util.List;
 
-// @AllArgsConstructor
-// @NoArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Builder
@@ -22,7 +22,7 @@ public class Customer {
     private Account customerId;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "customer")
+    @OneToMany(mappedBy = "customer",cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Address> addressList;
 
     @JsonIgnore

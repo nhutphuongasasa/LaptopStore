@@ -33,14 +33,14 @@ public class Account {
     @Column(nullable = false,columnDefinition = "VARCHAR(255) DEFAULT 'CUSTOMER'")
     private Enums.role role;
 
-    @OneToOne(mappedBy = "customerId")
+    @OneToOne(mappedBy = "customerId",cascade = CascadeType.ALL)
     private Customer customerId;
 
-    @OneToOne(mappedBy = "adminId")
+    @OneToOne(mappedBy = "adminId",cascade = CascadeType.ALL)
     private Admin adminId;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "account")
     private List<Comment> commentList;
 
     @JsonIgnore
