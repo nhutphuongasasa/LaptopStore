@@ -8,10 +8,10 @@ import lombok.*;
 import java.util.List;
 import java.util.UUID;
 
+
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
 @Table(name="account")
@@ -40,15 +40,24 @@ public class Account {
     private Admin adminId;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "account")
+    @OneToMany(mappedBy = "account",cascade = {CascadeType.PERSIST,
+                                                CascadeType.DETACH,
+                                                CascadeType.MERGE,
+                                                CascadeType.REFRESH})
     private List<Comment> commentList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "senderId")
+    @OneToMany(mappedBy = "senderId",cascade = {CascadeType.PERSIST,
+                                                CascadeType.DETACH,
+                                                CascadeType.MERGE,
+                                                CascadeType.REFRESH})
     private List<Chat> chatSender;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "receiverId")
+    @OneToMany(mappedBy = "receiverId",cascade = {CascadeType.PERSIST,
+                                                CascadeType.DETACH,
+                                                CascadeType.MERGE,
+                                                CascadeType.REFRESH})
     private List<Chat> chatReceiver;
 
 }

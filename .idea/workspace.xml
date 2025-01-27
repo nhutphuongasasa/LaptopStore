@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="610afb66-4257-4677-b343-64a4c2a7464e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/LaptopStore/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopStore/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopStore/src/main/java/com/example/demo/Models/Address.java" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopStore/src/main/java/com/example/demo/Models/Address.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,7 +46,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "demo1",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/NHUT PHUONG/Documents/quanlithuvien",
+    "last_opened_file_path": "C:/Users/NHUT PHUONG/Documents/LaptopStore/LaptopStore",
     "project.structure.last.edited": "Libraries",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0"

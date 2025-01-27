@@ -12,8 +12,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
 @Table(name="laptop")
@@ -26,11 +25,13 @@ public class Laptop {
     @Column(nullable = false)
     private Date MFG;
 
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "model_id",nullable = false)
     private LaptopModel laptopModel;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Enums.laptopStatus status;
+
+
 }

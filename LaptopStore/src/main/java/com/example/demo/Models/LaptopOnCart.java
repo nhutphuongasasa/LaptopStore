@@ -7,22 +7,21 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
-@Table(name="admin")
+@Table(name="laptop_on_cart")
 public class LaptopOnCart {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "cart_id",nullable = false)
     private Cart cart;
 
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "laptop_on_cart",nullable = false)
     private LaptopModel laptopModel;
 

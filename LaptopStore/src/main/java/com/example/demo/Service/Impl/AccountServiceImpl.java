@@ -24,19 +24,19 @@ import java.util.stream.Collectors;
 @Service
 public class AccountServiceImpl implements AccountService {
 
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
     
-    private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
 
-    private AdminRepository adminRepository;
-
-    private CustomerRepository customerRepository;
+//    private AdminRepository adminRepository;
+//
+//    private CustomerRepository customerRepository;
 
     public AccountServiceImpl(AccountRepository accountRepository, ModelMapper modelMapper,AdminRepository adminRepository,CustomerRepository customerRepository) {
         this.accountRepository = accountRepository;
         this.modelMapper = modelMapper;
-        this.adminRepository = adminRepository;
-        this.customerRepository = customerRepository;
+//        this.adminRepository = adminRepository;
+//        this.customerRepository = customerRepository;
     }
 
     // Lấy danh sách tài khoản
@@ -65,17 +65,9 @@ public class AccountServiceImpl implements AccountService {
         account.setId(null);
 
         if(account.getRole().equals(Enums.role.ADMIN)){
-            // Admin admin = Admin.builder()
-            //                     .adminId(account)
-            //                     .build();
-            // adminRepository.save(admin);
             Admin admin = new Admin();
             account.setAdminId(admin);
         }else if(account.getRole().equals(Enums.role.CUSTOMER)){
-            // Customer customer = Customer.builder()
-            //                             .customerId(account)
-            //                             .build();
-            // customerRepository.save(customer);
             Customer customer = new Customer();
             account.setCustomerId(customer);
         }else{

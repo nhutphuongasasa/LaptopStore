@@ -9,8 +9,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
 @Table(name="sale")
@@ -31,7 +30,10 @@ public class Sale {
     @Column(nullable = false)
     private Float discount;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     @JoinTable(
             name = "laptop_on_sale",
             joinColumns = @JoinColumn(name = "sale_id", nullable = false),

@@ -9,8 +9,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
 @Table(name="image")
@@ -23,11 +22,11 @@ public class Image {
     @Column(nullable = false)
     private String image_url;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.MERGE})
     @JoinTable(
             name = "laptop_on_image",
             joinColumns = @JoinColumn(name = "image_id"),
-            inverseJoinColumns = @JoinColumn(name = "laptop_mofel_id")
+            inverseJoinColumns = @JoinColumn(name = "laptop_model_id")
     )
     private List<LaptopModel> laptopModelList;
 

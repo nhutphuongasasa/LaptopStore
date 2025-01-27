@@ -12,8 +12,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
 @Table(name="orders")
@@ -23,7 +22,7 @@ public class Order {
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "customer_id",nullable = false)
     private Customer customer;
 
@@ -35,11 +34,17 @@ public class Order {
     private Date dateCreate;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order",cascade = {CascadeType.PERSIST,
+                                            CascadeType.DETACH,
+                                            CascadeType.MERGE,
+                                            CascadeType.REFRESH})
     private List<OrderDetail> orderDetailList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order",cascade = {CascadeType.PERSIST,
+                                            CascadeType.DETACH,
+                                            CascadeType.MERGE,
+                                            CascadeType.REFRESH})
     private List<Payment> paymentList;
 
 }

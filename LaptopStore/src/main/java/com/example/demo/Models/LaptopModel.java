@@ -1,21 +1,25 @@
 package com.example.demo.Models;
 
 import com.example.demo.Common.Enums;
+import com.example.demo.Repository.LaptopModelRepository;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
-@Table(name="laptop_model")
+@Table(name = "laptop_model")
 public class LaptopModel {
 
     @Id
@@ -51,25 +55,49 @@ public class LaptopModel {
     private String description;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "laptopModel")
+    @OneToMany(mappedBy = "laptopModel",cascade = CascadeType.ALL)
     private List<Comment> commentList;
 
-    @Column(nullable = false)
-    @OneToMany(mappedBy = "laptopModel")
-    private List<Laptop> laptopList;
+    @OneToMany(mappedBy = "laptopModel", cascade = CascadeType.ALL)
+    private List<Laptop> laptopList = new ArrayList<>(); // Khởi tạo danh sách
 
-    @ManyToMany(mappedBy = "laptopModelList")
+    @ManyToMany(mappedBy = "laptopModelList",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Image> imageList;
 
-    @ManyToMany(mappedBy = "laptopModelList")
+    @ManyToMany(mappedBy = "laptopModelList",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Sale> saleList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "laptopModel")
+    @OneToMany(mappedBy = "laptopModel",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<OrderDetail> orderDetailList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "laptopModel")
+    @OneToMany(mappedBy = "laptopModel",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<LaptopOnCart> laptopOnCartList;
+
+    // Helper method để thêm laptop
+    public void addLaptop(Laptop laptop) {
+        this.laptopList.add(laptop);
+        laptop.setLaptopModel(this);
+    }
+
+    // Helper method để xóa laptop
+    public void removeLaptop(Laptop laptop) {
+        this.laptopList.remove(laptop);
+        laptop.setLaptopModel(null);
+    }
+
 
 }

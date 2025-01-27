@@ -11,11 +11,10 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @Builder
 @Entity
-@Table(name="payment")
+@Table(name="payment_method")
 public class PaymentMethod {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,9 +25,13 @@ public class PaymentMethod {
     private String data;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Enums.PaymentType type;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "paymentMethod")
+    @OneToMany(mappedBy = "paymentMethod",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Payment> paymentList;
 }

@@ -3,6 +3,7 @@ package com.example.demo.Service.Impl;
 
 import com.example.demo.Models.Account;
 import com.example.demo.Models.Address;
+import com.example.demo.Models.Chat;
 import com.example.demo.Models.Customer;
 import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.AddressRepository;
@@ -56,7 +57,7 @@ public class AddressServiceImpl implements AddressService{
     @Override
     public void createAddress(AddressDTO addressDTO) {
         //tim kiem account theo id 
-        Account account = accountRepository.findById(addressDTO.getCustomer().getAccountId())
+        Account account = accountRepository.findById(addressDTO.getCustomer().getCustomerId())
             .orElseThrow(() -> new RuntimeException("Account not found"));
         //admin khong them dia chi
         if(account.getRole().equals(Enums.role.ADMIN)){
@@ -80,30 +81,48 @@ public class AddressServiceImpl implements AddressService{
     @Override
     public void updateAddress(UUID idToUpdate, AddressDTO updatedAddress) {
 
-         //tim kiem account theo id 
-        Account account = accountRepository.findById(updatedAddress.getCustomer().getAccountId())
-            .orElseThrow(() -> new RuntimeException("Account not found"));
+        // Tìm kiếm account theo id
+        Account account = accountRepository.findById(updatedAddress.getCustomer().getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        //lay customer voi khoa chinh la account
-        Optional<Customer>  customer = customerRepository.findById(account);
-        Customer customerTemp = customer.get();
+        // Lấy customer với khóa chính là account
+        Optional<Customer> customer = customerRepository.findById(account);
+        Customer customerTemp = customer.orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        //tim dia chi can update trong list customer
+        // Tìm địa chỉ cần update trong danh sách customer
         Address addressToUpdate = customerTemp.getAddressList().stream()
-            .filter(address -> address.getId().equals(idToUpdate))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Address not found"));
-        addressToUpdate = modelMapper.map(updatedAddress, Address.class);
-        
+                .filter(address -> address.getId().equals(idToUpdate))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Address not found"));
+
+        // Sử dụng builder để tạo một Address mới dựa trên updatedAddress
+        Address updatedEntity = Address.builder()
+                .id(addressToUpdate.getId())  // Giữ nguyên ID
+                .customer(addressToUpdate.getCustomer()) // Giữ nguyên Customer
+                .city(updatedAddress.getCity())
+                .district(updatedAddress.getDistrict())
+                .ward(updatedAddress.getWard())
+                .street(updatedAddress.getStreet())
+                .phone(updatedAddress.getPhone())
+                .build();
+
+        // Thay thế Address cũ bằng Address đã được cập nhật trong danh sách
+        int indexOfOldAddress = customerTemp.getAddressList().indexOf(addressToUpdate);
+        customerTemp.getAddressList().set(indexOfOldAddress, updatedEntity);
+
+        // Lưu các thay đổi vào cơ sở dữ liệu
         customerRepository.save(customerTemp);
     }
+
 
     // Xóa địa chỉ
     @Override
     public void deleteAddress(UUID id) {
-        if (!addressRepository.existsById(id)) {
-            throw new RuntimeException("Address does not exist");
-        }
+        Address addressExisting = addressRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("Address not found"));
+
+        addressExisting.setCustomer(null);
+        addressRepository.save(addressExisting);
         addressRepository.deleteById(id);
     }
 }
