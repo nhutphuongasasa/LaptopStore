@@ -1,5 +1,7 @@
 package com.example.demo.Service.Impl;
 
+import com.example.demo.Common.AccountNotFoundException;
+import com.example.demo.Common.ChatNotFoundException;
 import com.example.demo.DTO.ChatDTO;
 import com.example.demo.Models.Account;
 import com.example.demo.Models.Chat;
@@ -9,6 +11,7 @@ import com.example.demo.Service.ChatService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,11 +29,23 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<ChatDTO> getAllChats() {
-        return chatRepository.findAll().stream()
+    public List<ChatDTO> getAllChatsByAccountId(UUID accountId) {
+
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new AccountNotFoundException("Account not found"));
+
+
+        List<ChatDTO> chatDTOList = chatRepository.findBySenderId(account).stream()
                 .map(chat -> modelMapper.map(chat, ChatDTO.class))
                 .collect(Collectors.toList());
+
+
+        chatRepository.findByReceiverId(account).stream()
+                .map(chat -> modelMapper.map(chat, ChatDTO.class))
+                .forEach(chatDTOList::add);
+
+        return chatDTOList;
     }
+
 
     @Override
     public ChatDTO getChatById(UUID id) {
@@ -41,35 +56,40 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public void createChat(ChatDTO chatDTO) {
-        Chat chat = new Chat();
-
         Account sender = accountRepository.findById(chatDTO.getSenderId())
-                .orElseThrow(() -> new RuntimeException("Sender Account not found with ID: " + chatDTO.getSenderId()));
+                .orElseThrow(() -> new AccountNotFoundException("Sender Account not found"));
         Account receiver = accountRepository.findById(chatDTO.getReceiverId())
-                .orElseThrow(() -> new RuntimeException("Receiver Account not found with ID: " + chatDTO.getReceiverId()));
+                .orElseThrow(() -> new AccountNotFoundException("Receiver Account not found"));
 
-        chat.setSenderId(sender);
-        chat.setReceiverId(receiver);
-        chat.setMessage(chatDTO.getMessage());
-        chat.setCreateAt(chatDTO.getCreateAt());
+        // Sử dụng builder để tạo đối tượng Chat
+        Chat chat = Chat.builder()
+                .receiverId(receiver)
+                .senderId(sender)
+                .message(chatDTO.getMessage())
+                .createAt(LocalDateTime.now())
+                .build(); // Tạo đối tượng Chat và thiết lập tất cả các thuộc tính
 
-        chatRepository.save(chat);
+        sender.getChatSend().add(chat);
+        receiver.getChatReceive().add(chat);
+
+        accountRepository.save(sender);
+        accountRepository.save(receiver);
     }
+
 
     @Override
     public void updateChat(UUID chatId, ChatDTO chatDTO) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat not found with ID: " + chatId));
+                .orElseThrow(() -> new ChatNotFoundException("Chat not found"));
 
         Account sender = accountRepository.findById(chatDTO.getSenderId())
-                .orElseThrow(() -> new RuntimeException("Sender Account not found with ID: " + chatDTO.getSenderId()));
+                .orElseThrow(() -> new AccountNotFoundException("Sender not found"));
         Account receiver = accountRepository.findById(chatDTO.getReceiverId())
-                .orElseThrow(() -> new RuntimeException("Receiver Account not found with ID: " + chatDTO.getReceiverId()));
+                .orElseThrow(() -> new AccountNotFoundException("Receiver not found"));
 
-        chat.setSenderId(sender);
-        chat.setReceiverId(receiver);
         chat.setMessage(chatDTO.getMessage());
-        chat.setCreateAt(chatDTO.getCreateAt());
+
+        chat.setCreateAt(LocalDateTime.now());
 
         chatRepository.save(chat);
     }
@@ -77,10 +97,18 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public void deleteChat(UUID chatId) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat not found with ID: " + chatId));
-        chat.setSenderId(null);
-        chat.setReceiverId(null);
-        chatRepository.save(chat);
+                .orElseThrow(() -> new ChatNotFoundException("Chat not found"));
+
+        Account sender = chat.getSenderId();
+        Account receiver = chat.getReceiverId();
+
+        sender.getChatSend().remove(chat);
+        receiver.getChatReceive().remove(chat);
+
         chatRepository.delete(chat);
+
+        sender.getChatSend();
+        receiver.getChatReceive();
+
     }
 }

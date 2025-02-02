@@ -68,7 +68,7 @@ public class CartServiceImpl implements CartService {
     public void createCart(CartDTO cartDTO) {
         Account accountCustomer = accountRepository.findById(cartDTO.getCustomerId()).orElseThrow(() -> new RuntimeException("Customer with ID " + cartDTO.getCustomerId() + " not found!"));
 
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + cartDTO.getCustomerId() + " not found!"));
 
         Cart cart = Cart.builder()
@@ -85,7 +85,7 @@ public class CartServiceImpl implements CartService {
 
         Account accountCustomer = accountRepository.findById(cartDTO.getCustomerId()).orElseThrow(() -> new RuntimeException("Customer with ID " + cartDTO.getCustomerId() + " not found!"));
 
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + cartDTO.getCustomerId() + " not found!"));
 
         cart.setCustomer(customer);

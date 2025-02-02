@@ -2,6 +2,7 @@ package com.example.demo.DTO;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -14,5 +15,5 @@ public class ChatDTO {
     private UUID senderId;
     private UUID receiverId;
     private String message;
-    private Date createAt;
+    private LocalDateTime createAt;
 }

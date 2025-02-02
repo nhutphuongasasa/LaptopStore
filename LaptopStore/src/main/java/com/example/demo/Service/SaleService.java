@@ -13,8 +13,6 @@ public interface SaleService {
 
     void createSale(SaleDTO saleDTO);
 
-    void attachLaptopModelsToSale(UUID saleId, List<UUID> laptopModelIds);
-
     void updateSale(UUID saleId, SaleDTO saleDTO);
 
     void deleteSale(UUID id);

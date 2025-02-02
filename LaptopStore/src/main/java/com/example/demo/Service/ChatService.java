@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ChatService {
-    List<ChatDTO> getAllChats();
+    List<ChatDTO> getAllChatsByAccountId(UUID accountId);
 
     ChatDTO getChatById(UUID id);
 

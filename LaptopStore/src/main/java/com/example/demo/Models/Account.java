@@ -2,6 +2,8 @@ package com.example.demo.Models;
 
 import com.example.demo.Common.Enums;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,7 +13,8 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name="account")
@@ -34,9 +37,11 @@ public class Account {
     private Enums.role role;
 
     @OneToOne(mappedBy = "customerId",cascade = CascadeType.ALL)
+//    @JsonIgnore
     private Customer customerId;
 
     @OneToOne(mappedBy = "adminId",cascade = CascadeType.ALL)
+//    @JsonIgnore
     private Admin adminId;
 
     @JsonIgnore
@@ -51,13 +56,20 @@ public class Account {
                                                 CascadeType.DETACH,
                                                 CascadeType.MERGE,
                                                 CascadeType.REFRESH})
-    private List<Chat> chatSender;
+    private List<Chat> chatSend;
+
 
     @JsonIgnore
     @OneToMany(mappedBy = "receiverId",cascade = {CascadeType.PERSIST,
                                                 CascadeType.DETACH,
                                                 CascadeType.MERGE,
                                                 CascadeType.REFRESH})
-    private List<Chat> chatReceiver;
+    private List<Chat> chatReceive;
 
+//    @Override
+//    public String toString() {
+//        return "Chat{" +
+//                "id=" + id +
+//                '}';
+//    }
 }

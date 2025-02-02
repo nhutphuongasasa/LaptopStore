@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AddressDTO {
     private UUID id;
-    private CustomerDTO customer;
+    private UUID customerId;
     private String city;
     private String district;
     private String ward;

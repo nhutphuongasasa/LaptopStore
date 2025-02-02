@@ -75,7 +75,7 @@ public class PaymentServiceImpl implements PaymentService {
         Account accountCustomer = accountRepository.findById(paymentDTO.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
         // Validate Customer
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
 
         // Validate Order
@@ -106,7 +106,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
 
         // Validate and Update Customer
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
         existingPayment.setCustomer(customer);
 

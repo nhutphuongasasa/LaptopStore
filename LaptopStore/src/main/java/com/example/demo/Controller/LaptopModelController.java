@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/laptop-models")
+@RequestMapping("/api/laptop-models")
 public class LaptopModelController {
 
     private final LaptopModelService laptopModelService;

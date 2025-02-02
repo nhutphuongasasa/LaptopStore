@@ -48,7 +48,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerDTO getCustomerById(UUID id) {
         Account accountCustomer = accountRepository.findById(id).orElseThrow(() -> new RuntimeException("Customer with ID " + id + " not found!"));
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + id + " not found!"));
 
         return CustomerDTO.builder()
@@ -73,7 +73,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void deleteCustomer(UUID id) {
         Account accountCustomer = accountRepository.findById(id).orElseThrow(() -> new RuntimeException("Customer with ID " + id + " not found!"));
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + id + " not found!"));
         customerRepository.delete(customer);
     }

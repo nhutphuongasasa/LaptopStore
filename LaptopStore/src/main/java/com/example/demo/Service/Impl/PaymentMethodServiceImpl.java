@@ -1,17 +1,20 @@
 package com.example.demo.Service.Impl;
 
 import com.example.demo.Common.Enums;
+import com.example.demo.Common.JsonConverter;
 import com.example.demo.DTO.PaymentMethodDTO;
 import com.example.demo.Models.PaymentMethod;
 import com.example.demo.Repository.PaymentMethodRepository;
 import com.example.demo.Service.PaymentMethodService;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -20,18 +23,26 @@ import java.util.stream.Collectors;
 public class PaymentMethodServiceImpl implements PaymentMethodService {
 
     private final PaymentMethodRepository paymentMethodRepository;
-    private final ModelMapper modelMapper;
 
     public PaymentMethodServiceImpl(PaymentMethodRepository paymentMethodRepository, ModelMapper modelMapper) {
         this.paymentMethodRepository = paymentMethodRepository;
-        this.modelMapper = modelMapper;
     }
+
 
     // Lấy danh sách tất cả PaymentMethod
     @Override
     public List<PaymentMethodDTO> getAllPaymentMethods() {
         return paymentMethodRepository.findAll().stream()
-                .map(paymentMethod -> modelMapper.map(paymentMethod, PaymentMethodDTO.class))
+                .map(paymentMethod -> {
+
+                    Map<String, Object> dataMap = paymentMethod.getData();
+
+                    return PaymentMethodDTO.builder()
+                            .id(paymentMethod.getId())
+                            .data(dataMap)
+                            .type(paymentMethod.getType())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -40,13 +51,27 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     public PaymentMethodDTO getPaymentMethodById(UUID id) {
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("PaymentMethod with ID " + id + " not found!"));
-        return modelMapper.map(paymentMethod, PaymentMethodDTO.class);
+
+        Map<String, Object> dataMap = paymentMethod.getData();
+
+        return PaymentMethodDTO.builder()
+                .id(paymentMethod.getId())
+                .data(dataMap)
+                .type(paymentMethod.getType())
+                .build();
     }
+
 
     // Tạo mới PaymentMethod
     @Override
     public void createPaymentMethod(PaymentMethodDTO paymentMethodDTO) {
-        PaymentMethod paymentMethod = modelMapper.map(paymentMethodDTO, PaymentMethod.class);
+
+        PaymentMethod paymentMethod = PaymentMethod.builder()
+                .id(paymentMethodDTO.getId())
+                .data(paymentMethodDTO.getData())
+                .type(paymentMethodDTO.getType())
+                .build();
+
         paymentMethodRepository.save(paymentMethod);
     }
 
@@ -58,7 +83,8 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
 
         // Cập nhật các thuộc tính của PaymentMethod
         existingPaymentMethod.setData(paymentMethodDTO.getData());
-        existingPaymentMethod.setType(Enums.PaymentType.valueOf(paymentMethodDTO.getType()));
+        existingPaymentMethod.setId(id);
+        existingPaymentMethod.setType(Enums.PaymentType.valueOf(paymentMethodDTO.getType().name()));
 
         paymentMethodRepository.save(existingPaymentMethod);
     }

@@ -11,19 +11,20 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name="customer")
 public class Customer {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "BINARY(16)")
+//    @GeneratedValue(strategy = GenerationType.UUID)
+//    @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
     @MapsId
-    @OneToOne
-    @JoinColumn(name = "account_id")
+    @OneToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
+    @JoinColumn(name = "id")
     private Account customerId;
 
     @JsonIgnore
@@ -53,4 +54,10 @@ public class Customer {
             CascadeType.MERGE,
             CascadeType.REFRESH})
     private List<Cart> cartList;
+
+    @Override
+    public String toString() {
+        return "Customer{id=" + id + "}";
+    }
+
 }

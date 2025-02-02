@@ -13,7 +13,7 @@ import java.util.UUID;
 @Setter
 @Builder
 public class LaptopModelDTO {
-    private UUID id;                     // ID của LaptopModel
+    private UUID id;                     
     private String name;
     private String branch;
     private String cpu;
@@ -23,10 +23,10 @@ public class LaptopModelDTO {
     private Enums.Color color;
     private BigDecimal price;
     private String description;
-    private List<UUID> commentIds;      // Danh sách ID của Comment liên quan
-    private List<UUID> imageIds;        // Danh sách ID của Image
-    private List<UUID> saleIds;         // Danh sách ID của Sale
-    private List<UUID> laptopIds;       // Danh sách ID của Laptop
+    private List<UUID> commentIds;
+    private List<UUID> imageIds;
+    private List<UUID> saleIds;
+    private List<UUID> laptopIds;
     private List<UUID> laptopOnCartIds;
     private List<UUID> orderDetailIds;
 }

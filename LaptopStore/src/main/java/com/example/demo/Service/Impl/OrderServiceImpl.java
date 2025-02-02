@@ -71,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
         Account accountCustomer = accountRepository.findById(orderDTO.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + orderDTO.getCustomerId() + " not found!"));
         // Kiểm tra xem Customer có tồn tại không
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + orderDTO.getCustomerId() + " not found!"));
 
         // Map từ DTO sang Entity
@@ -93,7 +93,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + orderDTO.getCustomerId() + " not found!"));
 
         // Kiểm tra xem Customer mới có tồn tại không
-        Customer customer = customerRepository.findById(accountCustomer)
+        Customer customer = customerRepository.findById(accountCustomer.getId())
                 .orElseThrow(() -> new RuntimeException("Customer with ID " + orderDTO.getCustomerId() + " not found!"));
 
         // Cập nhật thông tin Order

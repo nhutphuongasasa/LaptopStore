@@ -20,23 +20,12 @@ public class PaymentMethodController {
         this.paymentMethodService = paymentMethodService;
     }
 
-    /**
-     * Lấy danh sách tất cả các phương thức thanh toán
-     */
     @GetMapping
     public ResponseEntity<?> getAllPaymentMethods() {
-        try {
             List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllPaymentMethods();
             return ResponseEntity.ok(paymentMethods); // HTTP 200 (OK)
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error: Server encountered an issue."); // HTTP 500
-        }
     }
 
-    /**
-     * Lấy chi tiết phương thức thanh toán theo ID
-     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentMethodById(@PathVariable UUID id) {
         try {
@@ -51,9 +40,7 @@ public class PaymentMethodController {
         }
     }
 
-    /**
-     * Tạo một phương thức thanh toán mới
-     */
+
     @PostMapping
     public ResponseEntity<String> createPaymentMethod(@RequestBody PaymentMethodDTO paymentMethodDTO) {
         try {

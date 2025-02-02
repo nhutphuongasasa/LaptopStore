@@ -8,7 +8,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,8 +26,9 @@ public class LaptopModelServiceImpl implements LaptopModelService {
     private final CommentRepository commentRepository;
     private final LaptopOnCartRepository laptopOnCartRepository;
     private final OrderDetailRepository orderDetailRepository;
+    private final SaleRepository saleRepository;
 
-    public LaptopModelServiceImpl(LaptopModelRepository laptopModelRepository, ModelMapper modelMapper,LaptopRepository laptopRepository, ImageRepository imageRepository, CommentRepository commentRepository, LaptopOnCartRepository laptopOnCartRepository, OrderDetailRepository orderDetailRepository) {
+    public LaptopModelServiceImpl(LaptopModelRepository laptopModelRepository,SaleRepository saleRepository, ModelMapper modelMapper,LaptopRepository laptopRepository, ImageRepository imageRepository, CommentRepository commentRepository, LaptopOnCartRepository laptopOnCartRepository, OrderDetailRepository orderDetailRepository) {
         this.laptopModelRepository = laptopModelRepository;
         this.modelMapper = modelMapper;
         this.laptopRepository = laptopRepository;
@@ -32,6 +36,7 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         this.commentRepository = commentRepository;
         this.laptopOnCartRepository = laptopOnCartRepository;
         this.orderDetailRepository = orderDetailRepository;
+        this.saleRepository =saleRepository;
     }
 
     // 1. Lấy tất cả LaptopModel
@@ -53,34 +58,52 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         // Ánh xạ các thuộc tính cơ bản từ LaptopModel sang LaptopModelDTO
         LaptopModelDTO laptopModelDTO = modelMapper.map(laptopModel, LaptopModelDTO.class);
 
-        // Ánh xạ thủ công các danh sách liên quan (list ID)
+        // Ánh xạ thủ công các danh sách liên quan (list ID), đảm bảo không bị null
         laptopModelDTO.setLaptopIds(
-                laptopModel.getLaptopList().stream()
-                        .map(Laptop::getId) // Chỉ lấy ID từ Laptop
+                Optional.ofNullable(laptopModel.getLaptopList())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .map(Laptop::getId)
                         .collect(Collectors.toList())
         );
 
         laptopModelDTO.setImageIds(
-                laptopModel.getImageList().stream()
-                        .map(Image::getId) // Chỉ lấy ID từ Image
+                Optional.ofNullable(laptopModel.getImageList())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .map(Image::getId)
                         .collect(Collectors.toList())
         );
 
         laptopModelDTO.setCommentIds(
-                laptopModel.getCommentList().stream()
-                        .map(Comment::getId) // Chỉ lấy ID từ Comment
+                Optional.ofNullable(laptopModel.getCommentList())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .map(Comment::getId)
                         .collect(Collectors.toList())
         );
 
         laptopModelDTO.setLaptopOnCartIds(
-                laptopModel.getLaptopOnCartList().stream()
-                        .map(LaptopOnCart::getId) // Chỉ lấy ID từ LaptopOnCart
+                Optional.ofNullable(laptopModel.getLaptopOnCartList())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .map(LaptopOnCart::getId)
                         .collect(Collectors.toList())
         );
 
         laptopModelDTO.setOrderDetailIds(
-                laptopModel.getOrderDetailList().stream()
-                        .map(OrderDetail::getId) // Chỉ lấy ID từ OrderDetail
+                Optional.ofNullable(laptopModel.getOrderDetailList())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .map(OrderDetail::getId)
+                        .collect(Collectors.toList())
+        );
+
+        laptopModelDTO.setSaleIds(
+                Optional.ofNullable(laptopModel.getSaleList())
+                        .orElseGet(Collections::emptyList)
+                        .stream()
+                        .map(Sale::getId)
                         .collect(Collectors.toList())
         );
 
@@ -88,12 +111,13 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         return laptopModelDTO;
     }
 
+
     // 3. Tạo LaptopModel mới
     @Override
     public void createLaptopModel(LaptopModelDTO laptopModelDTO) {
         // Ánh xạ các thuộc tính cơ bản từ DTO sang Entity
         LaptopModel laptopModel = modelMapper.map(laptopModelDTO, LaptopModel.class);
-
+        laptopModel.setId(null);
         // 1. Tìm và ánh xạ danh sách Laptop
         if (laptopModelDTO.getLaptopIds() != null) {
             List<Laptop> laptops = laptopModelDTO.getLaptopIds().stream()
@@ -139,6 +163,16 @@ public class LaptopModelServiceImpl implements LaptopModelService {
             laptopModel.setOrderDetailList(orderDetails); // Gán danh sách OrderDetail vào LaptopModel
         }
 
+        if (laptopModelDTO.getSaleIds() != null) {
+            List<Sale> sales = laptopModelDTO.getSaleIds().stream()
+                    .map(id -> saleRepository.findById(id)
+                            .orElseThrow(() -> new RuntimeException("OrderDetail with ID " + id + " not found")))
+                    .collect(Collectors.toList());
+            laptopModel.setSaleList(sales); // Gán danh sách OrderDetail vào LaptopModel
+        }
+
+
+
         // Lưu vào database
         laptopModelRepository.save(laptopModel);
     }
@@ -150,8 +184,9 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         LaptopModel existingLaptopModel = laptopModelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Laptop Model with ID " + id + " not found"));
 
-        // 2. Cập nhật các thuộc tính cơ bản từ DTO vào thực thể đã tồn tại
+
         modelMapper.map(laptopModelDTO, existingLaptopModel);
+
 
         // 3. Xử lý danh sách Laptop
         if (laptopModelDTO.getLaptopIds() != null) {
@@ -161,6 +196,8 @@ public class LaptopModelServiceImpl implements LaptopModelService {
                     )
                     .collect(Collectors.toList());
             existingLaptopModel.setLaptopList(updatedLaptops);
+        }else{
+            existingLaptopModel.getLaptopList().clear();
         }
 
         // 4. Xử lý danh sách Image
@@ -171,6 +208,8 @@ public class LaptopModelServiceImpl implements LaptopModelService {
                     )
                     .collect(Collectors.toList());
             existingLaptopModel.setImageList(updatedImages);
+        }else{
+            existingLaptopModel.getImageList().clear();
         }
 
         // 5. Xử lý danh sách Comment
@@ -181,6 +220,8 @@ public class LaptopModelServiceImpl implements LaptopModelService {
                     )
                     .collect(Collectors.toList());
             existingLaptopModel.setCommentList(updatedComments);
+        }else{
+            existingLaptopModel.getCommentList().clear();
         }
 
         // 6. Xử lý danh sách LaptopOnCart
@@ -191,6 +232,8 @@ public class LaptopModelServiceImpl implements LaptopModelService {
                     )
                     .collect(Collectors.toList());
             existingLaptopModel.setLaptopOnCartList(updatedLaptopsOnCart);
+        }else{
+            existingLaptopModel.getLaptopOnCartList().clear();
         }
 
         // 7. Xử lý danh sách OrderDetail
@@ -201,6 +244,8 @@ public class LaptopModelServiceImpl implements LaptopModelService {
                     )
                     .collect(Collectors.toList());
             existingLaptopModel.setOrderDetailList(updatedOrderDetails);
+        }else{
+            existingLaptopModel.getOrderDetailList().clear();
         }
 
         // 8. Lưu lại thực thể đã cập nhật vào cơ sở dữ liệu
@@ -217,7 +262,7 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         laptopModel.setCommentList(null);
         laptopModel.setLaptopOnCartList(null);
         laptopModel.setOrderDetailList(null);
-        laptopModelRepository.save(laptopModel);
+
         laptopModelRepository.delete(laptopModel);
     }
 }

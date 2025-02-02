@@ -1,17 +1,21 @@
 package com.example.demo.Models;
 
 import com.example.demo.Common.Enums;
+import com.example.demo.Common.JsonConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name="payment_method")
@@ -21,8 +25,10 @@ public class PaymentMethod {
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Lob
     @Column(columnDefinition = "json")
-    private String data;
+    @Convert(converter = JsonConverter.class)
+    private Map<String,Object> data;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

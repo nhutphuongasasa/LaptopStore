@@ -9,7 +9,8 @@ import com.example.demo.Common.Enums;
 import java.util.UUID;
 
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name="payment")
@@ -28,7 +29,7 @@ public class Payment {
     private Order order;
 
     @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
-    @JoinColumn(name = "payment_method_id",nullable = false)
+    @JoinColumn(name = "payment_method_id",nullable = true)
     private PaymentMethod paymentMethod;
 
     @Column(nullable = false)

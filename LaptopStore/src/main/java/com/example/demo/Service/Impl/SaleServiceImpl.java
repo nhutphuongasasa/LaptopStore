@@ -1,5 +1,6 @@
 package com.example.demo.Service.Impl;
 
+import com.example.demo.Common.SaleNotFoundException;
 import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Models.LaptopModel;
 import com.example.demo.Models.Sale;
@@ -58,11 +59,13 @@ public class SaleServiceImpl implements SaleService {
     // 3. Tạo mới một Sale
     @Override
     public void createSale(SaleDTO saleDTO) {
-        Sale sale = new Sale();
-        sale.setEvent_description(saleDTO.getEventDescription());
-        sale.setStartAt(saleDTO.getStartAt());
-        sale.setEndAt(saleDTO.getEndAt());
-        sale.setDiscount(saleDTO.getDiscount());
+        Sale sale = Sale.builder()
+                .event_description(saleDTO.getEventDescription())
+                .startAt(saleDTO.getStartAt())
+                .endAt(saleDTO.getEndAt())
+                .discount(saleDTO.getDiscount())
+                .build();
+
 
         // Danh sách LaptopModels có thể trống khi tạo Sale
         if (saleDTO.getLaptopModelIds() != null && !saleDTO.getLaptopModelIds().isEmpty()) {
@@ -73,46 +76,31 @@ public class SaleServiceImpl implements SaleService {
             sale.setLaptopModelList(laptopModels);
         }
         saleRepository.save(sale);
+
     }
     //cap nhat sale
     @Override
     public void updateSale(UUID saleId, SaleDTO saleDTO) {
         // Tìm Sale theo ID từ database
         Sale sale = saleRepository.findById(saleId)
-                .orElseThrow(() -> new RuntimeException("Sale not found with ID: " + saleId));
+                .orElseThrow(() -> new SaleNotFoundException("Sale not found"));
 
-        // Cập nhật các thông tin cơ bản
         sale.setEvent_description(saleDTO.getEventDescription());
         sale.setStartAt(saleDTO.getStartAt());
         sale.setEndAt(saleDTO.getEndAt());
         sale.setDiscount(saleDTO.getDiscount());
 
-        // Cập nhật danh sách LaptopModels liên quan
         if (saleDTO.getLaptopModelIds() != null) {
             List<LaptopModel> laptopModels = saleDTO.getLaptopModelIds().stream()
                     .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
                             .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + laptopModelId)))
                     .collect(Collectors.toList());
-            sale.setLaptopModelList(laptopModels); // Gán danh sách LaptopModels mới
+            sale.setLaptopModelList(laptopModels);
         }
 
         // Lưu các thay đổi vào database
         saleRepository.save(sale);
-    }
 
-    // 4. Gắn LaptopModels vào Sale
-    @Override
-    public void attachLaptopModelsToSale(UUID saleId, List<UUID> laptopModelIds) {
-        Sale sale = saleRepository.findById(saleId)
-                .orElseThrow(() -> new RuntimeException("Sale not found with ID: " + saleId));
-
-        List<LaptopModel> laptopModels = laptopModelIds.stream()
-                .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
-                        .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + laptopModelId)))
-                .collect(Collectors.toList());
-
-        sale.getLaptopModelList().addAll(laptopModels); // Thêm LaptopModels vào Sale
-        saleRepository.save(sale);
     }
 
     // 5. Xóa Sale theo ID
