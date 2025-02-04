@@ -39,7 +39,7 @@ public class Order {
     @OneToMany(mappedBy = "order",cascade = {CascadeType.PERSIST,
                                             CascadeType.DETACH,
                                             CascadeType.MERGE,
-                                            CascadeType.REFRESH},orphanRemoval = true)
+                                            CascadeType.REFRESH})
     private List<OrderDetail> orderDetailList;
 
     @JsonIgnore

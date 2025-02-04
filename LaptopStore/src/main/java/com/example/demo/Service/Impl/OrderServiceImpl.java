@@ -6,9 +6,10 @@ import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.OrderService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@Transactional
+
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository; // Repository để kiểm tra Customer tồn tại
@@ -99,20 +100,31 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
     }
 
+    @Transactional
     @Override
     public void updateOrder(UUID id, OrderDTO orderDTO) {
-        Order existingOrder = orderRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
+            Order existingOrder = orderRepository.findById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
 
-        Customer customer = customerRepository.findById(orderDTO.getCustomerId())
-                .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
+            Customer customer = customerRepository.findById(orderDTO.getCustomerId())
+                    .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
 
-        existingOrder.setCustomer(customer);
-        existingOrder.setStatus(orderDTO.getStatus());
-        existingOrder.setDateCreate(orderDTO.getDateCreate());
+            existingOrder.setCustomer(customer);
+            existingOrder.setStatus(orderDTO.getStatus());
+            existingOrder.setDateCreate(orderDTO.getDateCreate());
 
-        orderRepository.save(existingOrder);
+            if (orderDTO.getOrderDetails() == null || orderDTO.getOrderDetails().isEmpty()) {
+                existingOrder.getOrderDetailList().removeIf(orderDetail -> true);
+            } else {
+                existingOrder.getOrderDetailList().removeIf(orderDetail -> true);
+                existingOrder.setOrderDetailList(orderDTO.getOrderDetails().stream()
+                        .map(orderDetailId -> orderDetailRepository.findById(orderDetailId)
+                                .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found"))).collect(Collectors.toList()));
+            }
+
+            orderRepository.save(existingOrder);
     }
+
 
     @Override
     public void deleteOrder(UUID id) {
