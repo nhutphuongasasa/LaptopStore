@@ -20,10 +20,10 @@ public class Image {
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(nullable = false)
-    private String image_url;
+    @Column(name="image_url",nullable = false)
+    private String imageUrl;
 
-    @ManyToMany(cascade = {CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST,CascadeType.MERGE})
     @JoinTable(
             name = "laptop_on_image",
             joinColumns = @JoinColumn(name = "image_id"),

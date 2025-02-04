@@ -8,6 +8,7 @@ import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.LaptopOnCartRepository;
 import com.example.demo.Service.LaptopOnCartService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -64,10 +65,10 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
     @Override
     public void createLaptopOnCart(LaptopOnCartDTO laptopOnCartDTO) {
         Cart cart = cartRepository.findById(laptopOnCartDTO.getCartId())
-                .orElseThrow(() -> new RuntimeException("Cart with ID " + laptopOnCartDTO.getCartId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found!"));
 
         LaptopModel laptopModel = laptopModelRepository.findById(laptopOnCartDTO.getLaptopModelId())
-                .orElseThrow(() -> new RuntimeException("Laptop Model with ID " + laptopOnCartDTO.getLaptopModelId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Laptop Model not found!"));
 
         LaptopOnCart laptopOnCart = LaptopOnCart.builder()
                 .cart(cart)

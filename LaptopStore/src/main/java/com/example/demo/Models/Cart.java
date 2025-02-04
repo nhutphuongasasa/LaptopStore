@@ -29,6 +29,6 @@ public class Cart {
     @OneToMany(mappedBy = "cart",cascade = {CascadeType.PERSIST,
                                             CascadeType.DETACH,
                                             CascadeType.MERGE,
-                                            CascadeType.REFRESH})
+                                            CascadeType.REFRESH},orphanRemoval = true)
     private List<LaptopOnCart> laptopOnCarts;
 }

@@ -39,4 +39,5 @@ public class Comment {
     @ManyToOne
     @JoinColumn(name = "laptop_model_id")
     private LaptopModel laptopModel;
+
 }

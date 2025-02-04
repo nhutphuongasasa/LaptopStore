@@ -8,15 +8,16 @@ import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.OrderDetailRepository;
 import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Service.OrderDetailService;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class OrderDetailServiceImpl implements OrderDetailService {
 
     private final OrderDetailRepository orderDetailRepository;
@@ -31,12 +32,13 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         this.laptopModelRepository = laptopModelRepository;
     }
 
+    @Transactional
     @Override
     public List<OrderDetailDTO> getAllOrderDetails() {
         return orderDetailRepository.findAll().stream()
                 .map(orderDetail -> OrderDetailDTO.builder()
                         .id(orderDetail.getId())
-                        .orderId(orderDetail.getOrder().getId())
+                        .orderId(orderDetail.getOrder() == null ? null : orderDetail.getOrder().getId())
                         .laptopModelId(orderDetail.getLaptopModel().getId())
                         .quantity(orderDetail.getQuantity())
                         .price(orderDetail.getPrice())
@@ -44,33 +46,32 @@ public class OrderDetailServiceImpl implements OrderDetailService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     @Override
     public OrderDetailDTO getOrderDetailById(UUID id) {
         OrderDetail orderDetail = orderDetailRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("OrderDetail with ID " + id + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found"));
 
-        // Sử dụng Builder để trả về OrderDetailDTO
         return OrderDetailDTO.builder()
                 .id(orderDetail.getId())
-                .orderId(orderDetail.getOrder().getId())
+                .orderId(orderDetail.getOrder() == null ? null : orderDetail.getOrder().getId())
                 .laptopModelId(orderDetail.getLaptopModel().getId())
                 .quantity(orderDetail.getQuantity())
                 .price(orderDetail.getPrice())
-                .build();
+            .build();
     }
 
+    @Transactional
     @Override
     public void createOrderDetail(OrderDetailDTO orderDetailDTO) {
-        // Lấy thông tin Order
         Order order = orderRepository.findById(orderDetailDTO.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order with ID " + orderDetailDTO.getOrderId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Order  not found!"));
 
-        // Lấy thông tin LaptopModel
         LaptopModel laptopModel = laptopModelRepository.findById(orderDetailDTO.getLaptopModelId())
-                .orElseThrow(() -> new RuntimeException("LaptopModel with ID " + orderDetailDTO.getLaptopModelId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found!"));
 
-        // Sử dụng Builder để khởi tạo OrderDetail entity
         OrderDetail orderDetail = OrderDetail.builder()
+                .id(null)
                 .order(order)
                 .laptopModel(laptopModel)
                 .quantity(orderDetailDTO.getQuantity())
@@ -80,36 +81,32 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         orderDetailRepository.save(orderDetail);
     }
 
+    @Transactional
     @Override
     public void updateOrderDetail(UUID id, OrderDetailDTO orderDetailDTO) {
         OrderDetail existingOrderDetail = orderDetailRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("OrderDetail with ID " + id + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found!"));
 
-        // Lấy thông tin Order và LaptopModel từ DTO
         Order order = orderRepository.findById(orderDetailDTO.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order with ID " + orderDetailDTO.getOrderId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
 
         LaptopModel laptopModel = laptopModelRepository.findById(orderDetailDTO.getLaptopModelId())
-                .orElseThrow(() -> new RuntimeException("LaptopModel with ID " + orderDetailDTO.getLaptopModelId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found!"));
 
-        // Cập nhật OrderDetail (có thể dùng Builder tại đây nhưng vì cập nhật entity hiện có nên sử dụng setter)
         existingOrderDetail.setOrder(order);
         existingOrderDetail.setLaptopModel(laptopModel);
         existingOrderDetail.setQuantity(orderDetailDTO.getQuantity());
         existingOrderDetail.setPrice(orderDetailDTO.getPrice());
 
-        // Lưu thay đổi
         orderDetailRepository.save(existingOrderDetail);
     }
 
+    @Transactional
     @Override
     public void deleteOrderDetail(UUID id) {
         OrderDetail existingOrderDetail = orderDetailRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("OrderDetail with ID " + id + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found!"));
 
-        existingOrderDetail.setLaptopModel(null);
-        existingOrderDetail.setOrder(null);
-        orderDetailRepository.save(existingOrderDetail);
         orderDetailRepository.delete(existingOrderDetail);
     }
 }

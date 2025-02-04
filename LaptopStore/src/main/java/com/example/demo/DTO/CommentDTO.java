@@ -10,10 +10,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class CommentDTO {
-    private UUID id;              // Id của comment
-    private UUID accountId;       // ID của Account người viết comment
-    private UUID parentId;        // ID của comment cha (nếu có)
-    private String body;          // Nội dung của comment
-    private UUID laptopModelId;   // ID của Laptop Model (nếu có)
-    private List<UUID> replies;   // Danh sách các reply (trả lời)
+    private UUID id;
+    private UUID accountId;
+    private UUID parentId;
+    private String body;
+    private UUID laptopModelId;
+    private List<UUID> replies;
 }

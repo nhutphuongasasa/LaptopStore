@@ -11,7 +11,7 @@ import java.util.UUID;
 @Setter
 @Builder
 public class CartDTO {
-    private UUID id; // ID của Cart
-    private UUID customerId; // ID của Customer
-    private List<UUID> laptopOnCartIds; // ID danh sách LaptopOnCart
+    private UUID id;
+    private UUID customerId;
+    private List<UUID> laptopOnCartIds;
 }

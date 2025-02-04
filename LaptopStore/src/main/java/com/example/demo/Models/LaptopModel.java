@@ -56,11 +56,21 @@ public class LaptopModel {
     private String description;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "laptopModel",cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "laptopModel",cascade = {
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.PERSIST,
+            CascadeType.REFRESH
+    })
     private List<Comment> commentList;
 
-    @OneToMany(mappedBy = "laptopModel", cascade = CascadeType.ALL)
-    private List<Laptop> laptopList = new ArrayList<>(); // Khởi tạo danh sách
+    @OneToMany(mappedBy = "laptopModel", cascade = {
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.PERSIST,
+            CascadeType.REFRESH
+    })
+    private List<Laptop> laptopList ;
 
     @ManyToMany(mappedBy = "laptopModelList",cascade = {CascadeType.PERSIST,
             CascadeType.DETACH,

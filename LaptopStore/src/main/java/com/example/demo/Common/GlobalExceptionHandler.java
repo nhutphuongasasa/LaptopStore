@@ -1,5 +1,7 @@
 package com.example.demo.Common;
 
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -8,58 +10,28 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Xử lý lỗi AccountNotFoundException
-    @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<?> handleAccountNotFoundException(AccountNotFoundException ex) {
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<?> handleEntityNotFoundException(EntityNotFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage()));
     }
 
-    // Xử lý lỗi EmailExistedException
-    @ExceptionHandler(EmailExistedException.class)
-    public ResponseEntity<?> handleEmailExistedException(EmailExistedException ex) {
+    @ExceptionHandler(EntityExistsException.class)
+    public ResponseEntity<?> handleEntityExistsException(EntityExistsException ex) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage()));
     }
 
-    @ExceptionHandler(InvalidRoleException.class)
-    public ResponseEntity<?> handleInvalidRoleException(InvalidRoleException ex) {
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity
-                .status(HttpStatus.FORBIDDEN) // 403 FORBIDDEN
-                .body(buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage()));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage()));
     }
 
-    @ExceptionHandler(AddressNotFoundException.class)
-    public ResponseEntity<?> handleAddressNotFoundException(AddressNotFoundException ex){
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND,ex.getMessage()));
-    }
-
-    @ExceptionHandler(CustomerNotFoundException.class)
-    public  ResponseEntity<?> handleCustomerNotFoundException(CustomerNotFoundException ex){
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND,ex.getMessage()));
-    }
-
-    @ExceptionHandler(ChatNotFoundException.class)
-    public ResponseEntity<?> handleChatNotFoundException(ChatNotFoundException ex){
-        return  ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage()));
-    }
-
-    @ExceptionHandler(SaleNotFoundException.class)
-    public ResponseEntity<?> handleSaleNotFoundException(SaleNotFoundException ex){
-        return  ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage()));
-    }
-
-    // Xử lý tất cả các lỗi chung
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneralException(Exception ex) {
         return ResponseEntity

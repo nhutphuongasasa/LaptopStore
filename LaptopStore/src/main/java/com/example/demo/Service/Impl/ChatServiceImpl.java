@@ -1,20 +1,22 @@
 package com.example.demo.Service.Impl;
 
-import com.example.demo.Common.AccountNotFoundException;
-import com.example.demo.Common.ChatNotFoundException;
+
 import com.example.demo.DTO.ChatDTO;
 import com.example.demo.Models.Account;
 import com.example.demo.Models.Chat;
 import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.ChatRepository;
 import com.example.demo.Service.ChatService;
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 
 @Service
 public class ChatServiceImpl implements ChatService {
@@ -28,16 +30,14 @@ public class ChatServiceImpl implements ChatService {
         this.modelMapper = modelMapper;
     }
 
+    @Transactional
     @Override
     public List<ChatDTO> getAllChatsByAccountId(UUID accountId) {
-
-        Account account = accountRepository.findById(accountId).orElseThrow(() -> new AccountNotFoundException("Account not found"));
-
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
         List<ChatDTO> chatDTOList = chatRepository.findBySenderId(account).stream()
                 .map(chat -> modelMapper.map(chat, ChatDTO.class))
                 .collect(Collectors.toList());
-
 
         chatRepository.findByReceiverId(account).stream()
                 .map(chat -> modelMapper.map(chat, ChatDTO.class))
@@ -46,7 +46,7 @@ public class ChatServiceImpl implements ChatService {
         return chatDTOList;
     }
 
-
+    @Transactional
     @Override
     public ChatDTO getChatById(UUID id) {
         Chat chat = chatRepository.findById(id)
@@ -54,20 +54,20 @@ public class ChatServiceImpl implements ChatService {
         return modelMapper.map(chat, ChatDTO.class);
     }
 
+    @Transactional
     @Override
     public void createChat(ChatDTO chatDTO) {
         Account sender = accountRepository.findById(chatDTO.getSenderId())
-                .orElseThrow(() -> new AccountNotFoundException("Sender Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Sender Account not found"));
         Account receiver = accountRepository.findById(chatDTO.getReceiverId())
-                .orElseThrow(() -> new AccountNotFoundException("Receiver Account not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Receiver Account not found"));
 
-        // Sử dụng builder để tạo đối tượng Chat
         Chat chat = Chat.builder()
                 .receiverId(receiver)
                 .senderId(sender)
                 .message(chatDTO.getMessage())
                 .createAt(LocalDateTime.now())
-                .build(); // Tạo đối tượng Chat và thiết lập tất cả các thuộc tính
+                .build();
 
         sender.getChatSend().add(chat);
         receiver.getChatReceive().add(chat);
@@ -76,16 +76,16 @@ public class ChatServiceImpl implements ChatService {
         accountRepository.save(receiver);
     }
 
-
+    @Transactional
     @Override
     public void updateChat(UUID chatId, ChatDTO chatDTO) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new ChatNotFoundException("Chat not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat not found"));
 
         Account sender = accountRepository.findById(chatDTO.getSenderId())
-                .orElseThrow(() -> new AccountNotFoundException("Sender not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Sender not found"));
         Account receiver = accountRepository.findById(chatDTO.getReceiverId())
-                .orElseThrow(() -> new AccountNotFoundException("Receiver not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Receiver not found"));
 
         chat.setMessage(chatDTO.getMessage());
 
@@ -94,10 +94,11 @@ public class ChatServiceImpl implements ChatService {
         chatRepository.save(chat);
     }
 
+    @Transactional
     @Override
     public void deleteChat(UUID chatId) {
         Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new ChatNotFoundException("Chat not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Chat not found"));
 
         Account sender = chat.getSenderId();
         Account receiver = chat.getReceiverId();
@@ -106,9 +107,5 @@ public class ChatServiceImpl implements ChatService {
         receiver.getChatReceive().remove(chat);
 
         chatRepository.delete(chat);
-
-        sender.getChatSend();
-        receiver.getChatReceive();
-
     }
 }

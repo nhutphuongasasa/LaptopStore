@@ -20,6 +20,4 @@ public class PaymentDTO {
     private UUID paymentMethodId;
     private Enums.PaymentType type;
     private Enums.PaymentStatus status;
-
-
 }

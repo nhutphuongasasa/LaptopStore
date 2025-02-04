@@ -2,6 +2,7 @@ package com.example.demo.Controller;
 
 import com.example.demo.DTO.OrderDetailDTO;
 import com.example.demo.Service.OrderDetailService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/order-details") // Base URL
+@RequestMapping("/api/order-details")
 public class OrderDetailController {
 
     private final OrderDetailService orderDetailService;
@@ -22,34 +23,33 @@ public class OrderDetailController {
     @GetMapping
     public ResponseEntity<List<OrderDetailDTO>> getAllOrderDetails() {
         List<OrderDetailDTO> orderDetails = orderDetailService.getAllOrderDetails();
-        return ResponseEntity.ok(orderDetails); // HTTP 200
+        return ResponseEntity.ok(orderDetails);
     }
 
-    // Get order detail by ID
     @GetMapping("/{id}")
     public ResponseEntity<OrderDetailDTO> getOrderDetailById(@PathVariable UUID id) {
         OrderDetailDTO orderDetail = orderDetailService.getOrderDetailById(id);
-        return ResponseEntity.ok(orderDetail); // HTTP 200
+        return ResponseEntity.ok(orderDetail);
     }
 
     // Create new order detail
     @PostMapping
-    public ResponseEntity<Void> createOrderDetail(@RequestBody OrderDetailDTO orderDetailDTO) {
+    public ResponseEntity<?> createOrderDetail(@RequestBody OrderDetailDTO orderDetailDTO) {
         orderDetailService.createOrderDetail(orderDetailDTO);
-        return ResponseEntity.status(201).build(); // HTTP 201 - Created
+        return ResponseEntity.status(HttpStatus.CREATED).body("Order created successfully!");
     }
 
     // Update order detail by ID
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateOrderDetail(@PathVariable UUID id, @RequestBody OrderDetailDTO orderDetailDTO) {
+    public ResponseEntity<?> updateOrderDetail(@PathVariable UUID id, @RequestBody OrderDetailDTO orderDetailDTO) {
         orderDetailService.updateOrderDetail(id, orderDetailDTO);
-        return ResponseEntity.ok().build(); // HTTP 200
+        return ResponseEntity.ok("Order updated successfully");
     }
 
     // Delete order detail by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrderDetail(@PathVariable UUID id) {
         orderDetailService.deleteOrderDetail(id);
-        return ResponseEntity.noContent().build(); // HTTP 204 - No Content
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

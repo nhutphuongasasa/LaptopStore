@@ -7,6 +7,7 @@ import com.example.demo.Repository.LaptopRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Service.LaptopService;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 import org.modelmapper.ModelMapper;
@@ -16,64 +17,65 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Transactional
+
 @Service
 public class LaptopServiceImpl implements LaptopService {
 
     private final LaptopRepository laptopRepository;
     private final LaptopModelRepository laptopModelRepository;
-    private final ModelMapper modelMapper;
 
-    public LaptopServiceImpl(LaptopRepository laptopRepository, LaptopModelRepository laptopModelRepository, ModelMapper modelMapper) {
+    public LaptopServiceImpl(LaptopRepository laptopRepository, LaptopModelRepository laptopModelRepository) {
         this.laptopRepository = laptopRepository;
         this.laptopModelRepository = laptopModelRepository;
-        this.modelMapper = modelMapper;
     }
 
     // **1. Lấy danh sách tất cả Laptop**
+    @Transactional
     @Override
     public List<LaptopDTO> getAllLaptops() {
         return laptopRepository.findAll().stream()
                 .map(laptop -> LaptopDTO.builder()
-                        .id(laptop.getId())
+                        .macId(laptop.getMacId())
                         .mfg(laptop.getMFG())
                         .status(laptop.getStatus())
-                        .laptopModelId(laptop.getLaptopModel().getId()) // Ánh xạ LaptopModelId
+                        .laptopModelId(laptop.getLaptopModel() != null ? laptop.getLaptopModel().getId() : null)
                         .build())
                 .collect(Collectors.toList());
     }
 
     // **2. Lấy Laptop chi tiết theo ID**
+    @Transactional
     @Override
     public LaptopDTO getLaptopById(UUID id) {
         Laptop laptop = laptopRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Laptop not found!"));
         return LaptopDTO.builder()
-                .id(laptop.getId())
+                .macId(laptop.getMacId())
                 .mfg(laptop.getMFG())
                 .status(laptop.getStatus())
-                .laptopModelId(laptop.getLaptopModel().getId()) // Ánh xạ LaptopModelId
+                .laptopModelId(laptop.getLaptopModel().getId() != null ? laptop.getLaptopModel().getId() : null)
                 .build();
     }
 
     // **3. Tạo mới Laptop**
+    @Transactional
     @Override
     public void createLaptop(LaptopDTO laptopDTO) {
-        // 1. Map từ DTO -> Entity
         Laptop laptop = Laptop.builder()
                 .MFG(laptopDTO.getMfg())
                 .status(laptopDTO.getStatus())
                 .build();
 
-        // 2. Xác định LaptopModel dựa vào laptopModelId
+        if(laptopDTO.getLaptopModelId() == null){
+            throw  new IllegalArgumentException("LaptopModel cannot be null");
+        }
+
         LaptopModel laptopModel = laptopModelRepository.findById(laptopDTO.getLaptopModelId())
-                .orElseThrow(() -> new RuntimeException("Laptop Model with ID " + laptopDTO.getLaptopModelId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found"));
 
-        // 3. Gán quan hệ Laptop và LaptopModel
         laptop.setLaptopModel(laptopModel);
-        laptopModel.addLaptop(laptop);
+//        laptopModel.addLaptop(laptop);
 
-        // 4. Lưu vào database
         laptopRepository.save(laptop);
     }
 
@@ -81,43 +83,36 @@ public class LaptopServiceImpl implements LaptopService {
     @Override
     @Transactional
     public void updateLaptop(UUID laptopId, LaptopDTO updatedLaptopDTO) {
-        // 1. Tìm Laptop hiện tại bằng ID
+
         Laptop existingLaptop = laptopRepository.findById(laptopId)
-                .orElseThrow(() -> new RuntimeException("Laptop with ID " + laptopId + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Laptop not found"));
 
-        // 2. Tìm LaptopModel mới nếu laptopModelId thay đổi
-        if (!existingLaptop.getLaptopModel().getId().equals(updatedLaptopDTO.getLaptopModelId())) {
-            LaptopModel newModel = laptopModelRepository.findById(updatedLaptopDTO.getLaptopModelId())
-                    .orElseThrow(() -> new RuntimeException("LaptopModel with ID " + updatedLaptopDTO.getLaptopModelId() + " not found!"));
+        LaptopModel newModel = laptopModelRepository.findById(updatedLaptopDTO.getLaptopModelId())
+                .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found"));
 
-            // Cập nhật quan hệ
-            existingLaptop.getLaptopModel().removeLaptop(existingLaptop); // Xóa khỏi model cũ
-            newModel.addLaptop(existingLaptop); // Thêm vào model mới
+        if(existingLaptop.getLaptopModel() == null){
+            throw  new IllegalArgumentException("LaptopModel cannot be null");
+        }
+        else if (!existingLaptop.getLaptopModel().getId().equals(updatedLaptopDTO.getLaptopModelId())) {
             existingLaptop.setLaptopModel(newModel);
         }
 
-        // 3. Cập nhật các thuộc tính khác
         existingLaptop.setMFG(updatedLaptopDTO.getMfg());
         existingLaptop.setStatus(updatedLaptopDTO.getStatus());
 
-        // 4. Lưu các thay đổi vào database
         laptopRepository.save(existingLaptop);
     }
 
     // **5. Xóa Laptop theo ID**
+    @Transactional
     @Override
     public void deleteLaptop(UUID id) {
-        // 1. Kiểm tra laptop tồn tại
         Laptop laptop = laptopRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Laptop with ID " + id + " does not exist!"));
+                .orElseThrow(() -> new EntityNotFoundException("Laptop not found"));
 
-        // 2. Xóa laptop khỏi LaptopModel trước khi xóa
-        LaptopModel laptopModel = laptop.getLaptopModel();
-        laptopModel.removeLaptop(laptop);
+//        LaptopModel laptopModel = laptop.getLaptopModel();
+//        laptopModel.removeLaptop(laptop);
 
-        laptopModelRepository.save(laptopModel);
-
-        // 3. Xóa laptop
         laptopRepository.deleteById(id);
     }
 }

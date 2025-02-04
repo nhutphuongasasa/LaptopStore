@@ -67,7 +67,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     public void createPaymentMethod(PaymentMethodDTO paymentMethodDTO) {
 
         PaymentMethod paymentMethod = PaymentMethod.builder()
-                .id(paymentMethodDTO.getId())
+                .id(null)
                 .data(paymentMethodDTO.getData())
                 .type(paymentMethodDTO.getType())
                 .build();

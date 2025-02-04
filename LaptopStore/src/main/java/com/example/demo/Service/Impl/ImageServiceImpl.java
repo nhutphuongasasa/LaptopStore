@@ -7,13 +7,15 @@ import com.example.demo.Repository.ImageRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Service.ImageService;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+@Transactional
 @Service
 public class ImageServiceImpl implements ImageService {
 
@@ -35,9 +37,10 @@ public class ImageServiceImpl implements ImageService {
         return imageRepository.findAll().stream()
                 .map(image -> {
                     ImageDTO imageDTO = modelMapper.map(image, ImageDTO.class);
-                    imageDTO.setLaptopModelIds(image.getLaptopModelList().stream()
+                    imageDTO.setLaptopModelIds(image.getLaptopModelList() != null ?
+                            image.getLaptopModelList().stream()
                             .map(LaptopModel::getId)
-                            .collect(Collectors.toList()));
+                            .collect(Collectors.toList()) : null);
                     return imageDTO;
                 })
                 .collect(Collectors.toList());
@@ -49,66 +52,61 @@ public class ImageServiceImpl implements ImageService {
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Image not found with ID: " + id));
         ImageDTO imageDTO = modelMapper.map(image, ImageDTO.class);
-        imageDTO.setLaptopModelIds(image.getLaptopModelList().stream()
+        imageDTO.setLaptopModelIds(image.getLaptopModelList() != null ?
+                image.getLaptopModelList().stream()
                 .map(LaptopModel::getId)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()) : null);
         return imageDTO;
     }
 
     // 3. Tạo mới một Image
     @Override
     public void createImage(ImageDTO imageDTO) {
-        Image image = new Image();
-        image.setImage_url(imageDTO.getImageUrl()); // Gán URL từ DTO
+        Image image = Image.builder()
+                .id(null)
+                .imageUrl(imageDTO.getImageUrl())
+                .build();
 
-        // Danh sách LaptopModels có thể trống khi tạo Image
         if (imageDTO.getLaptopModelIds() != null && !imageDTO.getLaptopModelIds().isEmpty()) {
             List<LaptopModel> laptopModels = imageDTO.getLaptopModelIds().stream()
                     .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
-                            .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + laptopModelId)))
+                            .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found")))
                     .collect(Collectors.toList());
             image.setLaptopModelList(laptopModels);
+        }else{
+            throw  new IllegalArgumentException("LaptopModel cannot be null");
         }
-        imageRepository.save(image); // Lưu Image vào cơ sở dữ liệu
+        imageRepository.save(image);
     }
 
-    // 4. Gắn một Image hiện có vào danh sách LaptopModels
     @Override
-    public void attachImageToLaptopModels(UUID imageId, List<UUID> laptopModelIds) {
-        // Tìm Image trong database
-        Image image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found with ID: " + imageId));
+    public void updateImage(UUID imageId, ImageDTO imageDTO){
+        Image imageExisting = imageRepository.findById(imageId)
+                .orElseThrow(() -> new EntityNotFoundException("Image not found"));
+        imageExisting.setImageUrl(imageDTO.getImageUrl());
 
-        // Tìm các LaptopModels trong database
-        List<LaptopModel> laptopModels = laptopModelIds.stream()
-                .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
-                        .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + laptopModelId)))
-                .collect(Collectors.toList());
+        if(imageDTO.getLaptopModelIds() == null){
+            throw new IllegalArgumentException("LaptopModel cannot be null");
+        }
+        else{
+            List<LaptopModel> laptopModels = imageDTO.getLaptopModelIds().stream()
+                    .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
+                            .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found")))
+                    .collect(Collectors.toList());
+            imageExisting.setLaptopModelList(laptopModels);
+        }
 
-        // Gán danh sách LaptopModels vào Image
-        image.getLaptopModelList().addAll(laptopModels);
-        imageRepository.save(image); // Lưu thay đổi vào cơ sở dữ liệu
+        imageRepository.save(imageExisting);
     }
 
     // 5. Xóa Image theo ID
     @Override
     public void deleteImage(UUID id) {
-        // Kiểm tra xem Image có tồn tại không
         Image image = imageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Image not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Image not found"));
 
-        // Xóa mối quan hệ giữa Image và các LaptopModel liên kết
-        List<LaptopModel> laptopModels = image.getLaptopModelList();
+        image.setLaptopModelList(null);
 
-        for (LaptopModel laptopModel : laptopModels) {
-            laptopModel.getImageList().remove(image); // Loại bỏ Image khỏi ImageList trong LaptopModel
-        }
-
-        // Loại bỏ tất cả các LaptopModel khỏi Image (giờ Image không liên kết với bất kỳ LaptopModel nào)
-        image.getLaptopModelList().clear();
-        imageRepository.save(image); // Lưu trạng thái mới của Image
-
-        // Xóa Image sau khi mối quan hệ đã được làm sạch
         imageRepository.delete(image);
     }
 }

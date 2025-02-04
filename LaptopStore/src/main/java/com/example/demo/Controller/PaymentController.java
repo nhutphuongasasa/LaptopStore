@@ -29,44 +29,32 @@ public class PaymentController {
     // 2. Get payment by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentById(@PathVariable UUID id) {
-        try {
+
             PaymentDTO payment = paymentService.getPaymentById(id);
-            return ResponseEntity.ok(payment); // HTTP 200: OK
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage()); // HTTP 404: NOT FOUND
-        }
+            return ResponseEntity.ok(payment);
+
     }
 
-    // 3. Create a new payment
+    // Create a new payment
     @PostMapping
     public ResponseEntity<?> createPayment(@RequestBody PaymentDTO paymentDTO) {
-        try {
             paymentService.createPayment(paymentDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Payment created successfully."); // HTTP 201: CREATED
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage()); // HTTP 400: BAD REQUEST
-        }
+            return ResponseEntity.status(HttpStatus.CREATED).body("Payment created successfully.");
     }
 
     // 4. Update payment by ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePayment(@PathVariable UUID id, @RequestBody PaymentDTO paymentDTO) {
-        try {
             paymentService.updatePayment(id, paymentDTO);
-            return ResponseEntity.ok("Payment updated successfully."); // HTTP 200: OK
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage()); // HTTP 404: NOT FOUND
-        }
+            return ResponseEntity.ok("Payment updated successfully.");
+
     }
 
     // 5. Delete payment by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePayment(@PathVariable UUID id) {
-        try {
+
             paymentService.deletePayment(id);
-            return ResponseEntity.ok("Payment deleted successfully."); // HTTP 200: OK
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage()); // HTTP 404: NOT FOUND
-        }
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

@@ -24,56 +24,35 @@ public class LaptopController {
     @GetMapping
     public ResponseEntity<List<LaptopDTO>> getAllLaptops() {
         List<LaptopDTO> laptops = laptopService.getAllLaptops();
-        return ResponseEntity.ok(laptops); // HTTP 200
+        return ResponseEntity.ok(laptops);
     }
 
     // 2. Lấy Laptop chi tiết theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getLaptopById(@PathVariable UUID id) {
-        try {
             LaptopDTO laptop = laptopService.getLaptopById(id);
-            return ResponseEntity.ok(laptop); // HTTP 200
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Error: " + e.getMessage()); // HTTP 404 + Message
-        }
+            return ResponseEntity.ok(laptop);
     }
 
     // 3. Tạo mới Laptop
     @PostMapping
     public ResponseEntity<String> createLaptop(@RequestBody LaptopDTO laptopDTO) {
-        try {
             laptopService.createLaptop(laptopDTO);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Laptop created successfully!"); // HTTP 201
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error: " + e.getMessage()); // HTTP 400 + Message
-        }
+                    .body("Laptop created successfully!");
     }
 
     // 4. Cập nhật Laptop
     @PutMapping("/{id}")
     public ResponseEntity<String> updateLaptop(@PathVariable UUID id, @RequestBody LaptopDTO laptopDTO) {
-        try {
             laptopService.updateLaptop(id, laptopDTO);
-            return ResponseEntity.ok("Laptop updated successfully!"); // HTTP 200
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Error: " + e.getMessage()); // HTTP 404
-        }
+            return ResponseEntity.ok("Laptop updated successfully!");
     }
 
     // 5. Xóa Laptop
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteLaptop(@PathVariable UUID id) {
-        try {
+    public ResponseEntity<?> deleteLaptop(@PathVariable UUID id) {
             laptopService.deleteLaptop(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                    .body("Laptop deleted successfully!"); // HTTP 204 (No Content with message)
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Error: " + e.getMessage()); // HTTP 404 + Message
-        }
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

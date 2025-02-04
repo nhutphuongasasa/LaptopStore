@@ -22,69 +22,45 @@ public class LaptopModelController {
     // 1. Lấy danh sách tất cả LaptopModels
     @GetMapping
     public ResponseEntity<?> getAllLaptopModels() {
-        try {
+
             List<LaptopModelDTO> laptopModels = laptopModelService.getAllLaptopModels();
             return ResponseEntity.ok(laptopModels);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error while fetching laptop models: " + e.getMessage());
-        }
+
     }
 
     // 2. Lấy LaptopModel theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getLaptopModelById(@PathVariable UUID id) {
-        try {
+
             LaptopModelDTO laptopModel = laptopModelService.getLaptopModelById(id);
             return ResponseEntity.ok(laptopModel);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("LaptopModel with ID " + id + " not found: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error fetching LaptopModel by ID: " + e.getMessage());
-        }
+
     }
 
     // 3. Tạo mới một LaptopModel
     @PostMapping
     public ResponseEntity<?> createLaptopModel(@RequestBody LaptopModelDTO laptopModelDTO) {
-        try {
+
             laptopModelService.createLaptopModel(laptopModelDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body("LaptopModel created successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error creating LaptopModel: " + e.getMessage());
-        }
+
     }
 
     // 4. Cập nhật một LaptopModel
     @PutMapping("/{id}")
     public ResponseEntity<?> updateLaptopModel(@PathVariable UUID id, @RequestBody LaptopModelDTO laptopModelDTO) {
-        try {
+
             laptopModelService.updateLaptopModel(id, laptopModelDTO);
             return ResponseEntity.ok("LaptopModel updated successfully.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("LaptopModel with ID " + id + " not found: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error updating LaptopModel: " + e.getMessage());
-        }
+
     }
 
     // 5. Xóa một LaptopModel
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLaptopModel(@PathVariable UUID id) {
-        try {
+
             laptopModelService.deleteLaptopModel(id);
-            return ResponseEntity.ok("LaptopModel deleted successfully.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("LaptopModel with ID " + id + " not found: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error deleting LaptopModel: " + e.getMessage());
-        }
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+
     }
 }

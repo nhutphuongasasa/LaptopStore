@@ -8,9 +8,11 @@ import com.example.demo.Repository.CommentRepository;
 import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Service.CommentService;
-import org.modelmapper.ModelMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,76 +23,78 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final AccountRepository accountRepository;
     private final LaptopModelRepository laptopModelRepository;
-    private final ModelMapper modelMapper;
 
-    public CommentServiceImpl(CommentRepository commentRepository, AccountRepository accountRepository,
-                              LaptopModelRepository laptopModelRepository, ModelMapper modelMapper) {
+    public CommentServiceImpl(CommentRepository commentRepository, AccountRepository accountRepository, LaptopModelRepository laptopModelRepository) {
         this.commentRepository = commentRepository;
         this.accountRepository = accountRepository;
         this.laptopModelRepository = laptopModelRepository;
-        this.modelMapper = modelMapper;
     }
 
-    // 1. Lấy danh sách tất cả Comment
+    // Lấy danh sách tất cả Comment
+    @Transactional
     @Override
-    public List<CommentDTO> getAllComments() {
-        return commentRepository.findAll().stream()
-                .map(comment -> {
-                    CommentDTO commentDTO = modelMapper.map(comment, CommentDTO.class);
-                    // Lấy danh sách reply IDs nếu có
-                    if (comment.getReplies() != null) {
-                        commentDTO.setReplies(
-                                comment.getReplies().stream()
-                                        .map(Comment::getId)
-                                        .collect(Collectors.toList())
-                        );
-                    }
-                    return commentDTO;
-                })
+    public List<CommentDTO> getAllCommentsByAccountId(UUID accountId) {
+        return commentRepository.findByAccountId(accountId).stream()
+                .map(comment -> CommentDTO.builder()
+                        .id(comment.getId())
+                        .parentId(comment.getParent() == null ? null : comment.getParent().getId())
+                        .body(comment.getBody())
+                        .accountId(comment.getAccount().getId())
+                        .laptopModelId(comment.getLaptopModel() == null ? null : comment.getLaptopModel().getId())
+                        .replies(comment.getReplies() == null ? Collections.emptyList()
+                                : comment.getReplies().stream().map(Comment :: getId).collect(Collectors.toList()))
+                        .build())
                 .collect(Collectors.toList());
     }
 
-    // 2. Lấy Comment theo ID
+    // Lấy Comment theo ID
+    @Transactional
     @Override
     public CommentDTO getCommentById(UUID id) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
 
-        CommentDTO commentDTO = modelMapper.map(comment, CommentDTO.class);
-
-        // Lấy danh sách reply IDs nếu có
-        if (comment.getReplies() != null) {
-            commentDTO.setReplies(
-                    comment.getReplies().stream()
-                            .map(Comment::getId)
-                            .collect(Collectors.toList())
-            );
-        }
-        return commentDTO;
+        return CommentDTO.builder()
+                .id(comment.getId())
+                .parentId(comment.getParent() == null ? null : comment.getParent().getId())
+                .body(comment.getBody())
+                .accountId(comment.getAccount().getId())
+                .laptopModelId(comment.getLaptopModel() == null ? null : comment.getLaptopModel().getId())
+                .replies(comment.getReplies() == null ? Collections.emptyList()
+                        : comment.getReplies().stream().map(Comment :: getId).collect(Collectors.toList()))
+                .build();
     }
 
     // 3. Tạo một Comment mới
     @Override
+    @Transactional
     public void createComment(CommentDTO commentDTO) {
-        Comment comment = new Comment();
-        comment.setBody(commentDTO.getBody());
-
-        // Gắn Account
-        Account account = accountRepository.findById(commentDTO.getAccountId())
-                .orElseThrow(() -> new RuntimeException("Account not found with ID: " + commentDTO.getAccountId()));
-        comment.setAccount(account);
-
-        // Gắn LaptopModel nếu có
-        if (commentDTO.getLaptopModelId() != null) {
-            LaptopModel laptopModel = laptopModelRepository.findById(commentDTO.getLaptopModelId())
-                    .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + commentDTO.getLaptopModelId()));
-            comment.setLaptopModel(laptopModel);
+        if(commentDTO.getBody() == null){
+            throw  new IllegalArgumentException("body cannot be null");
         }
 
-        // Gắn Parent Comment nếu có
+        Comment comment = Comment.builder()
+                .replies(null)
+                .id(null)
+                .body(commentDTO.getBody())
+                .build();
+
+        Account account = accountRepository.findById(commentDTO.getAccountId())
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        comment.setAccount(account);
+
+        if(commentDTO.getLaptopModelId() == null){
+            throw new IllegalArgumentException("LaptopModel cannot be null");
+        } else{
+            LaptopModel laptopModel = laptopModelRepository.findById(commentDTO.getLaptopModelId())
+                    .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found"));
+            comment.setLaptopModel(laptopModel);
+
+        }
+
         if (commentDTO.getParentId() != null) {
             Comment parentComment = commentRepository.findById(commentDTO.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent Comment not found with ID: " + commentDTO.getParentId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Parent Comment not found"));
             comment.setParent(parentComment);
         }
 
@@ -99,31 +103,41 @@ public class CommentServiceImpl implements CommentService {
 
     // 4. Cập nhật một Comment
     @Override
+    @Transactional
     public void updateComment(UUID commentId, CommentDTO commentDTO) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + commentId));
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
 
         comment.setBody(commentDTO.getBody());
 
         // Cập nhật Account
         if (commentDTO.getAccountId() != null) {
             Account account = accountRepository.findById(commentDTO.getAccountId())
-                    .orElseThrow(() -> new RuntimeException("Account not found with ID: " + commentDTO.getAccountId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Account not found"));
             comment.setAccount(account);
         }
 
         // Cập nhật LaptopModel nếu có
         if (commentDTO.getLaptopModelId() != null) {
             LaptopModel laptopModel = laptopModelRepository.findById(commentDTO.getLaptopModelId())
-                    .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + commentDTO.getLaptopModelId()));
+                    .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found "));
             comment.setLaptopModel(laptopModel);
         }
 
         // Cập nhật Parent Comment nếu có
         if (commentDTO.getParentId() != null) {
             Comment parentComment = commentRepository.findById(commentDTO.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent Comment not found with ID: " + commentDTO.getParentId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Parent Comment not found"));
             comment.setParent(parentComment);
+        }
+
+        if (commentDTO.getReplies() != null) {
+            List<Comment> replies = commentDTO.getReplies().stream()
+                    .map(replyId -> commentRepository.findById(replyId)
+                            .orElseThrow(() -> new EntityNotFoundException("Reply Comment not found")))
+                    .collect(Collectors.toList());
+
+            comment.setReplies(replies);
         }
 
         commentRepository.save(comment);
@@ -131,15 +145,11 @@ public class CommentServiceImpl implements CommentService {
 
     // 5. Xóa Comment theo ID
     @Override
+    @Transactional
     public void deleteComment(UUID id) {
-        Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found with ID: " + id));
+        Comment commentExisting = commentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
 
-        // Xóa liên kết giữa comment này và replies của nó
-        if (comment.getReplies() != null) {
-            comment.getReplies().forEach(reply -> reply.setParent(null));
-        }
-
-        commentRepository.delete(comment);
+        commentRepository.delete(commentExisting);
     }
 }

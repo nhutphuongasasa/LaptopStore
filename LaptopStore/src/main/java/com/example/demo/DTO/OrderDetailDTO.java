@@ -10,9 +10,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class OrderDetailDTO {
-    private UUID id;                // ID của OrderDetail
-    private UUID orderId;           // ID của Order (quan hệ ManyToOne)
-    private UUID laptopModelId;     // ID của LaptopModel (quan hệ ManyToOne)
-    private Integer quantity;       // Số lượng
-    private BigDecimal price;       // Giá
+    private UUID id;
+    private UUID orderId;
+    private UUID laptopModelId;
+    private Integer quantity;
+    private BigDecimal price;
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CommentService {
-    List<CommentDTO> getAllComments();
+    List<CommentDTO> getAllCommentsByAccountId(UUID accountId);
     CommentDTO getCommentById(UUID id);
     void createComment(CommentDTO commentDTO);
     void updateComment(UUID id, CommentDTO updatedComment);

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -32,13 +33,13 @@ public class Order {
     private Enums.OrderStatus status = Enums.OrderStatus.Pending;
 
     @Column(name = "date_create", nullable = false)
-    private Date dateCreate;
+    private LocalDateTime dateCreate;
 
     @JsonIgnore
     @OneToMany(mappedBy = "order",cascade = {CascadeType.PERSIST,
                                             CascadeType.DETACH,
                                             CascadeType.MERGE,
-                                            CascadeType.REFRESH})
+                                            CascadeType.REFRESH},orphanRemoval = true)
     private List<OrderDetail> orderDetailList;
 
     @JsonIgnore

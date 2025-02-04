@@ -1,6 +1,5 @@
 package com.example.demo.Service.Impl;
 
-import com.example.demo.Common.SaleNotFoundException;
 import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Models.LaptopModel;
 import com.example.demo.Models.Sale;
@@ -8,8 +7,10 @@ import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.SaleRepository;
 import com.example.demo.Service.SaleService;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,15 +23,14 @@ public class SaleServiceImpl implements SaleService {
     private final LaptopModelRepository laptopModelRepository;
     private final ModelMapper modelMapper;
 
-    public SaleServiceImpl(SaleRepository saleRepository,
-                           LaptopModelRepository laptopModelRepository,
-                           ModelMapper modelMapper) {
+    public SaleServiceImpl(SaleRepository saleRepository, LaptopModelRepository laptopModelRepository, ModelMapper modelMapper) {
         this.saleRepository = saleRepository;
         this.laptopModelRepository = laptopModelRepository;
         this.modelMapper = modelMapper;
     }
 
-    // 1. Lấy danh sách tất cả Sale
+    //Lấy danh sách tất cả Sale
+    @Transactional
     @Override
     public List<SaleDTO> getAllSales() {
         return saleRepository.findAll().stream()
@@ -44,7 +44,8 @@ public class SaleServiceImpl implements SaleService {
                 .collect(Collectors.toList());
     }
 
-    // 2. Lấy Sale theo ID
+    //Lấy Sale theo ID
+    @Transactional
     @Override
     public SaleDTO getSaleById(UUID id) {
         Sale sale = saleRepository.findById(id)
@@ -56,7 +57,8 @@ public class SaleServiceImpl implements SaleService {
         return saleDTO;
     }
 
-    // 3. Tạo mới một Sale
+    //Tạo mới một Sale
+    @Transactional
     @Override
     public void createSale(SaleDTO saleDTO) {
         Sale sale = Sale.builder()
@@ -66,53 +68,46 @@ public class SaleServiceImpl implements SaleService {
                 .discount(saleDTO.getDiscount())
                 .build();
 
-
-        // Danh sách LaptopModels có thể trống khi tạo Sale
         if (saleDTO.getLaptopModelIds() != null && !saleDTO.getLaptopModelIds().isEmpty()) {
             List<LaptopModel> laptopModels = saleDTO.getLaptopModelIds().stream()
                     .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
-                            .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + laptopModelId)))
+                            .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found ")))
                     .collect(Collectors.toList());
             sale.setLaptopModelList(laptopModels);
         }
         saleRepository.save(sale);
-
     }
+
     //cap nhat sale
+    @Transactional
     @Override
     public void updateSale(UUID saleId, SaleDTO saleDTO) {
-        // Tìm Sale theo ID từ database
         Sale sale = saleRepository.findById(saleId)
-                .orElseThrow(() -> new SaleNotFoundException("Sale not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Sale not found"));
 
-        sale.setEvent_description(saleDTO.getEventDescription());
-        sale.setStartAt(saleDTO.getStartAt());
-        sale.setEndAt(saleDTO.getEndAt());
-        sale.setDiscount(saleDTO.getDiscount());
+        modelMapper.map(saleDTO, sale);
+        sale.setId(saleId);
 
         if (saleDTO.getLaptopModelIds() != null) {
             List<LaptopModel> laptopModels = saleDTO.getLaptopModelIds().stream()
                     .map(laptopModelId -> laptopModelRepository.findById(laptopModelId)
-                            .orElseThrow(() -> new RuntimeException("LaptopModel not found with ID: " + laptopModelId)))
+                            .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found")))
                     .collect(Collectors.toList());
             sale.setLaptopModelList(laptopModels);
         }
 
-        // Lưu các thay đổi vào database
         saleRepository.save(sale);
-
     }
 
-    // 5. Xóa Sale theo ID
+    //Xóa Sale theo ID
+    @Transactional
     @Override
     public void deleteSale(UUID id) {
         Sale sale = saleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sale not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Sale not found"));
 
-        // Xóa mối quan hệ giữa Sale và các LaptopModel liên kết
         sale.getLaptopModelList().forEach(laptopModel -> laptopModel.getSaleList().remove(sale));
 
-        // Xóa hoàn toàn Sale
         saleRepository.delete(sale);
     }
 }

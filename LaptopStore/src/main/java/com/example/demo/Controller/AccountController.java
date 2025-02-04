@@ -1,7 +1,6 @@
 package com.example.demo.Controller;
 
-import com.example.demo.Common.AccountNotFoundException;
-import com.example.demo.Common.EmailExistedException;
+
 import com.example.demo.DTO.AccountDTO;
 import com.example.demo.Service.AccountService;
 import org.springframework.http.HttpStatus;
@@ -41,17 +40,14 @@ public class AccountController {
     // Tạo tài khoản mới
     @PostMapping
     public ResponseEntity<String> createAccount(@RequestBody AccountDTO accountDTO) {
-
             accountService.createAccount(accountDTO);
             return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Account created successfully!");
-
     }
 
     // Cập nhật tài khoản
     @PutMapping("/{id}")
     public ResponseEntity<String> updateAccount(@PathVariable UUID id, @RequestBody AccountDTO updatedAccount) {
-            // Gọi service để cập nhật tài khoản
             accountService.updateAccount(id, updatedAccount);
             return ResponseEntity.ok("Account updated successfully!");
     }
@@ -60,7 +56,7 @@ public class AccountController {
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteAccount(@PathVariable UUID id) {
             accountService.deleteAccount(id);
-            return ResponseEntity.ok("Account deleted successfully!");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 
     }
 }

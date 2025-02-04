@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -14,8 +16,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class OrderDTO {
-    private UUID id; // ID của Order
-    private UUID customerId; // ID của Customer
-    private Enums.OrderStatus status; // Trạng thái Order
-    private Date dateCreate; // Ngày tạo Order
+    private UUID id;
+    private UUID customerId;
+    private Enums.OrderStatus status;
+    private LocalDateTime dateCreate;
+    private List<UUID> OrderDetails;
+    private List<UUID> Payments;
 }

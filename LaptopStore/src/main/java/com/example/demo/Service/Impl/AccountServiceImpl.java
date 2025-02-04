@@ -1,9 +1,7 @@
 package com.example.demo.Service.Impl;
 
-import com.example.demo.Common.AccountNotFoundException;
-import com.example.demo.Common.EmailExistedException;
+
 import com.example.demo.Common.Enums;
-import com.example.demo.Common.InvalidRoleException;
 import com.example.demo.DTO.AccountDTO;
 import com.example.demo.Models.Account;
 import com.example.demo.Models.Admin;
@@ -14,16 +12,18 @@ import com.example.demo.Repository.CustomerRepository;
 import com.example.demo.Service.AccountService;
 
 
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-@Transactional
+
 @Service
 public class AccountServiceImpl implements AccountService {
 
@@ -43,6 +43,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Lấy danh sách tài khoản
+    @Transactional
     @Override
     public List<AccountDTO> getAllAccounts() {
         return accountRepository.findAll().stream()
@@ -51,17 +52,19 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Lấy chi tiết một tài khoản
+    @Transactional
     @Override
     public AccountDTO getAccountById(UUID id) {
         Account account = accountRepository.findById(id)
-            .orElseThrow(() -> new AccountNotFoundException("Account not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         return modelMapper.map(account, AccountDTO.class);
     }
     // Tạo mới tài khoản
+    @Transactional
     @Override
     public void createAccount(AccountDTO accountDTO) {
         if (accountRepository.findByEmail(accountDTO.getEmail()).isPresent()) {
-            throw new EmailExistedException("Email already exists!");
+            throw new EntityExistsException("Email already exists!");
         }
         Account account = modelMapper.map(accountDTO,Account.class);
 
@@ -71,26 +74,26 @@ public class AccountServiceImpl implements AccountService {
             account.setAdminId(admin);
         }else if(account.getRole().equals(Enums.role.CUSTOMER)){
             Customer customer = new Customer();
-//            customer.setId(account.getId());  // ID của Customer giống ID của Account
             customer.setCustomerId(account);
             account.setCustomerId(customer);
         }else{
-            throw new InvalidRoleException("Role Is Wrong");
+            throw new IllegalArgumentException("Role Is Wrong");
         }
         accountRepository.save(account);
     }
 
 
     // Cập nhật thông tin tài khoản
+    @Transactional
     @Override
     public void updateAccount(UUID id, AccountDTO updatedAccount) {
         Account existingAccount = accountRepository.findById(id)
-            .orElseThrow(() -> new AccountNotFoundException("Account not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Account not found"));
         Optional<Account> existingAccount1 = accountRepository.findByEmail(updatedAccount.getEmail());
 
         if(existingAccount1.isPresent()){
             if(!existingAccount1.get().getId().equals(existingAccount.getId())){
-                throw new EmailExistedException("Email already existed");
+                throw new EntityExistsException("Email already existed");
             }
         }
         modelMapper.map(updatedAccount, existingAccount);
@@ -98,11 +101,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // Xóa tài khoản
+    @Transactional
     @Override
     public void deleteAccount(UUID id) {
-        if (!accountRepository.existsById(id)) {
-            throw new AccountNotFoundException("Account does not exist!");
-        }
+        Account account =accountRepository.findById(id)
+                        .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
         accountRepository.deleteById(id);
     }
 

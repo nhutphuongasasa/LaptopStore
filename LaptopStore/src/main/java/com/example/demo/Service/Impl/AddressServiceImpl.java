@@ -12,6 +12,7 @@ import com.example.demo.Repository.CustomerRepository;
 import com.example.demo.Service.AddressService;
 import com.example.demo.DTO.AddressDTO;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-@Transactional
+
 @Service
 public class AddressServiceImpl implements AddressService{
 
@@ -35,6 +36,7 @@ public class AddressServiceImpl implements AddressService{
     }
 
     // Lấy tất cả địa chỉ của một khách hàng
+    @Transactional
     @Override
     public List<AddressDTO> getAllAddress(UUID customerId) {
         List<Address> addresses = addressRepository.findByCustomerId(customerId);
@@ -44,33 +46,36 @@ public class AddressServiceImpl implements AddressService{
     }
 
     // Lấy địa chỉ theo ID
+    @Transactional
     @Override
     public AddressDTO getAddressById(UUID id) {
         Address address = addressRepository.findById(id)
-            .orElseThrow(() -> new AddressNotFoundException("Address not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Address not found"));
         return modelMapper.map(address, AddressDTO.class);
     }
     
     // Tạo mới địa chỉ
+    @Transactional
     @Override
     public void createAddress(AddressDTO addressDTO) {
         Address address = modelMapper.map(addressDTO,Address.class);
         Customer  customer = customerRepository.findById(addressDTO.getCustomerId())
-                           .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+                           .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
         address.setCustomer(customer);
         customer.getAddressList().add(address);
         addressRepository.save(address);
     }
     
     // Cập nhật thông tin địa chỉ
+    @Transactional
     @Override
     public void updateAddress(UUID idToUpdate, AddressDTO updatedAddress) {
         //kiem tra  customer
         Customer customer = customerRepository.findById(updatedAddress.getCustomerId())
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
         //lay address
         Address addressToUpdate = addressRepository.findById(idToUpdate)
-                .orElseThrow(() -> new AddressNotFoundException("Address not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Address not found"));
         //update address
         modelMapper.map(updatedAddress, addressToUpdate);
         addressToUpdate.setId(idToUpdate);
@@ -80,10 +85,11 @@ public class AddressServiceImpl implements AddressService{
 
 
     // Xóa địa chỉ
+    @Transactional
     @Override
     public void deleteAddress(UUID id) {
         Address addressExisting = addressRepository.findById(id)
-                        .orElseThrow(() -> new AddressNotFoundException("Address not found"));
+                        .orElseThrow(() -> new EntityNotFoundException("Address not found"));
         Customer customer = addressExisting.getCustomer();
 
         customer.getAddressList().remove(addressExisting);

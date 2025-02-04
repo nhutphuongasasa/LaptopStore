@@ -9,5 +9,5 @@ import java.util.UUID;
 public class ImageDTO {
     private UUID id;
     private String imageUrl;
-    private List<UUID> laptopModelIds; // Danh sách LaptopModel gắn với Image
+    private List<UUID> laptopModelIds;
 }

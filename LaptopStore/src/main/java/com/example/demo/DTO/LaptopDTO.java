@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class LaptopDTO {
 
-    private UUID id;
+    private UUID macId;
 
     private Date mfg;
 

@@ -11,9 +11,9 @@ import java.util.UUID;
 @Setter
 @Builder
 public class CustomerDTO {
-    private UUID customerId; // Sử dụng UUID nếu Account ID là UUID.
-    private List<UUID> addressIds; // Danh sách ID của Address
-    private List<UUID> paymentIds; // Danh sách ID của Payment
-    private List<UUID> orderIds; // Danh sách ID của Order
-    private List<UUID> cartIds; // Danh sách ID của Cart
+    private UUID customerId;
+    private List<UUID> addressIds;
+    private List<UUID> paymentIds;
+    private List<UUID> orderIds;
+    private List<UUID> cartIds;
 }

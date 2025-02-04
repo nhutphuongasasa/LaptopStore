@@ -6,6 +6,7 @@ import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.PaymentService;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -72,70 +72,56 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public void createPayment(PaymentDTO paymentDTO) {
-        Account accountCustomer = accountRepository.findById(paymentDTO.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
-        // Validate Customer
-        Customer customer = customerRepository.findById(accountCustomer.getId())
-                .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
+        System.out.println(paymentDTO.getCustomerId());
+        Customer customer = customerRepository.findById(paymentDTO.getCustomerId())
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
 
-        // Validate Order
         Order order = orderRepository.findById(paymentDTO.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order with ID " + paymentDTO.getOrderId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
 
-        // Validate PaymentMethod
         PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentDTO.getPaymentMethodId())
-                .orElseThrow(() -> new RuntimeException("Payment Method with ID " + paymentDTO.getPaymentMethodId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found!"));
 
-        // Map DTO to Entity and Set Relations
-        Payment payment = modelMapper.map(paymentDTO, Payment.class);
-        payment.setCustomer(customer);
-        payment.setOrder(order);
-        payment.setPaymentMethod(paymentMethod);
+        Payment payment = Payment.builder()
+                .id(null)
+                .type(paymentDTO.getType())
+                .status(paymentDTO.getStatus())
+                .paymentMethod(paymentMethod)
+                .customer(customer)
+                .order(order)
+                .build();
 
-        // Save Payment
         paymentRepository.save(payment);
     }
 
     @Override
     public void updatePayment(UUID id, PaymentDTO paymentDTO) {
-        // Find Existing Payment
         Payment existingPayment = paymentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payment with ID " + id + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found!"));
 
-        Account accountCustomer = accountRepository.findById(paymentDTO.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
-
-        // Validate and Update Customer
-        Customer customer = customerRepository.findById(accountCustomer.getId())
-                .orElseThrow(() -> new RuntimeException("Customer with ID " + paymentDTO.getCustomerId() + " not found!"));
+        Customer customer = customerRepository.findById(paymentDTO.getCustomerId())
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
         existingPayment.setCustomer(customer);
 
-        // Validate and Update Order
         Order order = orderRepository.findById(paymentDTO.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order with ID " + paymentDTO.getOrderId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
         existingPayment.setOrder(order);
 
-        // Validate and Update PaymentMethod
         PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentDTO.getPaymentMethodId())
-                .orElseThrow(() -> new RuntimeException("Payment Method with ID " + paymentDTO.getPaymentMethodId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Payment Method not found!"));
         existingPayment.setPaymentMethod(paymentMethod);
 
-        // Update Type and Status
         existingPayment.setType(paymentDTO.getType());
         existingPayment.setStatus(paymentDTO.getStatus());
 
-        // Save Updated Payment
         paymentRepository.save(existingPayment);
     }
 
     @Override
     public void deletePayment(UUID id) {
         Payment existingPayment = paymentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payment with ID " + id + " not found!"));
-        existingPayment.setCustomer(null);
-        existingPayment.setOrder(null);
-        existingPayment.setPaymentMethod(null);
-        paymentRepository.save(existingPayment);
+                .orElseThrow(() -> new EntityNotFoundException("Payment not found!"));
+
         paymentRepository.delete(existingPayment);
     }
 }
