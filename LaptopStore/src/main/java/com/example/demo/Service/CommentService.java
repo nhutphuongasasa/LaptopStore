@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface CommentService {
     List<CommentDTO> getAllCommentsByAccountId(UUID accountId);
     CommentDTO getCommentById(UUID id);
-    void createComment(CommentDTO commentDTO);
-    void updateComment(UUID id, CommentDTO updatedComment);
+    CommentDTO createComment(CommentDTO commentDTO);
+    CommentDTO updateComment(UUID id, CommentDTO updatedComment);
     void deleteComment(UUID id);
 }

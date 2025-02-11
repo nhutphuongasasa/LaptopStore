@@ -11,9 +11,9 @@ public interface CartService {
 
     CartDTO getCartById(UUID id); // Lấy Cart theo ID
 
-    void createCart(CartDTO cartDTO); // Tạo mới Cart
+    CartDTO createCart(CartDTO cartDTO); // Tạo mới Cart
 
-    void updateCart(UUID id, CartDTO cartDTO); // Cập nhật Cart theo ID
+    CartDTO updateCart(UUID id, CartDTO cartDTO); // Cập nhật Cart theo ID
 
     void deleteCart(UUID id); // Xóa Cart theo ID
 }

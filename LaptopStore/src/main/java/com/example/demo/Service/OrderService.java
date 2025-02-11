@@ -10,9 +10,9 @@ public interface OrderService {
 
     OrderDTO getOrderById(UUID id); // Lấy Order theo ID
 
-    void createOrder(OrderDTO orderDTO); // Tạo Order mới
+    OrderDTO createOrder(OrderDTO orderDTO); // Tạo Order mới
 
-    void updateOrder(UUID id, OrderDTO orderDTO); // Cập nhật Order
+    OrderDTO updateOrder(UUID id, OrderDTO orderDTO); // Cập nhật Order
 
     void deleteOrder(UUID id); // Xóa Order theo ID
 }

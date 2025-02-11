@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
+import com.example.demo.DTO.AddressDTO;
 import com.example.demo.DTO.CartDTO;
 import com.example.demo.Service.CartService;
 import org.springframework.http.HttpStatus;
@@ -21,42 +23,53 @@ public class CartController {
 
     // 1. API: Lấy tất cả Cart
     @GetMapping
-    public ResponseEntity<?> getAllCarts() {
+    public ResponseEntity<DataResponse<List<CartDTO>>> getAllCarts() {
             List<CartDTO> carts = cartService.getAllCarts();
-            return ResponseEntity.ok(carts);
+            return ResponseEntity.ok(DataResponse.<List<CartDTO>>builder()
+                    .success(true)
+                    .message("Cart retrieved successfully")
+                    .data(cartService.getAllCarts())
+                    .build());
     }
 
     // Lấy Cart theo ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCartById(@PathVariable("id") UUID id) {
-            CartDTO cart = cartService.getCartById(id);
-            return ResponseEntity.ok(cart);
+    public ResponseEntity<DataResponse<CartDTO>> getCartById(@PathVariable("id") UUID id) {
+            return ResponseEntity.ok(DataResponse.<CartDTO>builder()
+                    .success(true)
+                    .message("Addresses retrieved successfully")
+                    .data(cartService.getCartById(id))
+                    .build());
     }
 
     //  API: Tạo mới Cart
     @PostMapping
     public ResponseEntity<?> createCart(@RequestBody CartDTO cartDTO) {
-            cartService.createCart(cartDTO);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED) // Trả về HTTP 201
-                    .body("Cart created successfully!");
+
+        return ResponseEntity.ok(DataResponse.<CartDTO>builder()
+                .success(true)
+                .message("Addresses created successfully")
+                .data(cartService.createCart(cartDTO))
+                .build());
     }
 
     //  Cập nhật Cart theo ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCart(@PathVariable("id") UUID id, @RequestBody CartDTO cartDTO) {
-            cartService.updateCart(id, cartDTO);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body("Cart updated successfully!");
+        return ResponseEntity.ok(DataResponse.<CartDTO>builder()
+                .success(true)
+                .message("Addresses updated successfully")
+                .data(cartService.updateCart(id, cartDTO))
+                .build());
     }
 
     // 5. API: Xóa Cart theo ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCart(@PathVariable("id") UUID id) {
             cartService.deleteCart(id);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body("Cart deleted successfully!");
+            return ResponseEntity.ok(DataResponse.builder()
+                    .success(true)
+                    .message("Addresses deleted successfully")
+                    .build());
     }
 }

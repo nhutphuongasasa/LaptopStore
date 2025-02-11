@@ -1,6 +1,7 @@
 package com.example.demo.Controller;
 
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.AccountDTO;
 import com.example.demo.Service.AccountService;
 import org.springframework.http.HttpStatus;
@@ -21,42 +22,57 @@ public class AccountController {
 
     // Lấy tất cả tài khoản
     @GetMapping
-    public ResponseEntity<?> getAllAccounts() {
+    public ResponseEntity<DataResponse<List<AccountDTO>>> getAllAccounts() {
 
-            List<AccountDTO> accountDTOList = accountService.getAllAccounts();
-            return ResponseEntity.ok(accountDTOList);
+            return ResponseEntity.ok(DataResponse.<List<AccountDTO>>builder()
+                    .success(true)
+                    .message("Account retrieved successfully")
+                    .data(accountService.getAllAccounts())
+                    .build());
 
     }
 
     // Lấy tài khoản theo id
     @GetMapping("/{id}")
-    public ResponseEntity<?> getAccountById(@PathVariable UUID id) {
-
-            AccountDTO accountDTO = accountService.getAccountById(id);
-            return ResponseEntity.ok(accountDTO);
-
+    public ResponseEntity<DataResponse<AccountDTO>> getAccountById(@PathVariable UUID id) {
+        AccountDTO accountDTO = accountService.getAccountById(id);
+        return ResponseEntity.ok(DataResponse.<AccountDTO>builder()
+                .success(true)
+                .message("Account retrieved successfully")
+                .data(accountDTO)
+                .build());
     }
 
     // Tạo tài khoản mới
     @PostMapping
-    public ResponseEntity<String> createAccount(@RequestBody AccountDTO accountDTO) {
-            accountService.createAccount(accountDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Account created successfully!");
+    public ResponseEntity<DataResponse<?>> createAccount(@RequestBody AccountDTO accountDTO) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(DataResponse.<AccountDTO>builder()
+                        .success(true)
+                        .message("Account created successfully!")
+                        .data(accountService.createAccount(accountDTO))
+                        .build());
     }
 
     // Cập nhật tài khoản
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateAccount(@PathVariable UUID id, @RequestBody AccountDTO updatedAccount) {
-            accountService.updateAccount(id, updatedAccount);
-            return ResponseEntity.ok("Account updated successfully!");
+    public ResponseEntity<DataResponse<?>> updateAccount(@PathVariable UUID id, @RequestBody AccountDTO updatedAccount) {
+            return ResponseEntity.ok(DataResponse.<AccountDTO>builder()
+                    .success(true)
+                    .message("Account updated successfully!")
+                    .data(accountService.updateAccount(id, updatedAccount))
+                    .build());
     }
 
     // Xóa tài khoản
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteAccount(@PathVariable UUID id) {
+    public ResponseEntity<DataResponse<?>> deleteAccount(@PathVariable UUID id) {
             accountService.deleteAccount(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            return ResponseEntity.ok(DataResponse.builder()
+                    .success(true)
+                    .message("Account deleted successfully!")
+                    .build());
 
     }
 }

@@ -66,10 +66,5 @@ public class Account {
                                                 CascadeType.REFRESH})
     private List<Chat> chatReceive;
 
-//    @Override
-//    public String toString() {
-//        return "Chat{" +
-//                "id=" + id +
-//                '}';
-//    }
+
 }

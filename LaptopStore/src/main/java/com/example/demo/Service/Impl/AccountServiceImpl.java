@@ -47,7 +47,13 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public List<AccountDTO> getAllAccounts() {
         return accountRepository.findAll().stream()
-            .map(account -> modelMapper.map(account, AccountDTO.class))
+            .map(account -> AccountDTO.builder()
+                    .id(account.getId())
+                    .name(account.getName())
+                    .email(account.getEmail())
+                    .password(account.getPassword())
+                    .role(account.getRole())
+                    .build())
             .collect(Collectors.toList());
     }
 
@@ -57,16 +63,28 @@ public class AccountServiceImpl implements AccountService {
     public AccountDTO getAccountById(UUID id) {
         Account account = accountRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-        return modelMapper.map(account, AccountDTO.class);
+        return AccountDTO.builder()
+                .id(account.getId())
+                .name(account.getName())
+                .email(account.getEmail())
+                .password(account.getPassword())
+                .role(account.getRole())
+                .build();
     }
     // Tạo mới tài khoản
     @Transactional
     @Override
-    public void createAccount(AccountDTO accountDTO) {
+    public AccountDTO createAccount(AccountDTO accountDTO) {
         if (accountRepository.findByEmail(accountDTO.getEmail()).isPresent()) {
             throw new EntityExistsException("Email already exists!");
         }
-        Account account = modelMapper.map(accountDTO,Account.class);
+        Account account = Account.builder()
+                .id(null)
+                .email(accountDTO.getEmail())
+                .name(accountDTO.getName())
+                .password(accountDTO.getPassword())
+                .role(accountDTO.getRole())
+                .build();
 
         if(account.getRole().equals(Enums.role.ADMIN)){
             Admin admin = new Admin();
@@ -79,16 +97,20 @@ public class AccountServiceImpl implements AccountService {
         }else{
             throw new IllegalArgumentException("Role Is Wrong");
         }
-        accountRepository.save(account);
+
+        Account accountExisting = accountRepository.save(account);
+
+        return convertToDTO(accountExisting);
     }
 
 
     // Cập nhật thông tin tài khoản
     @Transactional
     @Override
-    public void updateAccount(UUID id, AccountDTO updatedAccount) {
+    public AccountDTO updateAccount(UUID id, AccountDTO updatedAccount) {
         Account existingAccount = accountRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
         Optional<Account> existingAccount1 = accountRepository.findByEmail(updatedAccount.getEmail());
 
         if(existingAccount1.isPresent()){
@@ -96,8 +118,15 @@ public class AccountServiceImpl implements AccountService {
                 throw new EntityExistsException("Email already existed");
             }
         }
-        modelMapper.map(updatedAccount, existingAccount);
-        accountRepository.save(existingAccount);
+
+        existingAccount.setName(updatedAccount.getName());
+        existingAccount.setEmail(updatedAccount.getEmail());
+        existingAccount.setRole(updatedAccount.getRole());
+        existingAccount.setPassword(updatedAccount.getPassword());
+
+        Account account = accountRepository.save(existingAccount);
+
+        return convertToDTO(account);
     }
 
     // Xóa tài khoản
@@ -110,4 +139,14 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.deleteById(id);
     }
 
+
+    private AccountDTO convertToDTO(Account account) {
+        return AccountDTO.builder()
+                .id(account.getId())
+                .email(account.getEmail())
+                .password(account.getPassword())
+                .name(account.getName())
+                .role(account.getRole())
+                .build();
+    }
 }

@@ -20,6 +20,6 @@ public class OrderDTO {
     private UUID customerId;
     private Enums.OrderStatus status;
     private LocalDateTime dateCreate;
-    private List<UUID> OrderDetails;
-    private List<UUID> Payments;
+    private List<UUID> orderDetails;
+    private List<UUID> payments;
 }

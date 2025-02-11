@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
+import com.example.demo.DTO.CommentDTO;
 import com.example.demo.DTO.ImageDTO;
 import com.example.demo.Service.ImageService;
 import org.springframework.http.HttpStatus;
@@ -22,35 +24,52 @@ public class ImageController {
 
     // 1. Lấy danh sách tất cả Images
     @GetMapping
-    public ResponseEntity<List<ImageDTO>> getAllImages() {
-        List<ImageDTO> images = imageService.getAllImages();
-        return ResponseEntity.ok(images);
+    public ResponseEntity<DataResponse<List<ImageDTO>>> getAllImages() {
+        return ResponseEntity.ok(DataResponse.<List<ImageDTO>>builder()
+                .success(true)
+                .message("Image retrieved successfully")
+                .data(imageService.getAllImages())
+                .build());
     }
 
     // 2. Lấy Image theo ID
     @GetMapping("/{id}")
-    public ResponseEntity<ImageDTO> getImageById(@PathVariable UUID id) {
-        ImageDTO imageDTO = imageService.getImageById(id);
-        return ResponseEntity.ok(imageDTO);
+    public ResponseEntity<DataResponse<ImageDTO>> getImageById(@PathVariable UUID id) {
+
+        return ResponseEntity.ok(DataResponse.<ImageDTO>builder()
+                .success(true)
+                .message("Image retrieved successfully")
+                .data(imageService.getImageById(id))
+                .build());
     }
 
     // 3. Tạo mới một Image
     @PostMapping
     public ResponseEntity<?> createImage(@RequestBody ImageDTO imageDTO) {
-        imageService.createImage(imageDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Image created successfully!");
+        return ResponseEntity.ok(DataResponse.<ImageDTO>builder()
+                .success(true)
+                .message("Image created successfully")
+                .data(imageService.createImage(imageDTO))
+                .build());
     }
 
     @PutMapping("/{id}")
     public  ResponseEntity<?> updateImage(@PathVariable UUID id,@RequestBody ImageDTO imageDTO){
-        imageService.updateImage(id,imageDTO);
-        return ResponseEntity.ok("Image updated successfully!");
+
+        return ResponseEntity.ok(DataResponse.<ImageDTO>builder()
+                .success(true)
+                .message("Image updated successfully")
+                .data(imageService.updateImage(id,imageDTO))
+                .build());
     }
 
     // 5. Xóa Image theo ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteImage(@PathVariable UUID id) {
         imageService.deleteImage(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("Image deleted successfully")
+                .build());
     }
 }

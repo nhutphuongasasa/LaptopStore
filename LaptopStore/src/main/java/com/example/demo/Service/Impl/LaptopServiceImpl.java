@@ -1,6 +1,8 @@
 package com.example.demo.Service.Impl;
 
+import com.example.demo.DTO.CommentDTO;
 import com.example.demo.DTO.LaptopDTO;
+import com.example.demo.Models.Comment;
 import com.example.demo.Models.Laptop;
 import com.example.demo.Models.LaptopModel;
 import com.example.demo.Repository.LaptopRepository;
@@ -60,7 +62,7 @@ public class LaptopServiceImpl implements LaptopService {
     // **3. Tạo mới Laptop**
     @Transactional
     @Override
-    public void createLaptop(LaptopDTO laptopDTO) {
+    public LaptopDTO createLaptop(LaptopDTO laptopDTO) {
         Laptop laptop = Laptop.builder()
                 .MFG(laptopDTO.getMfg())
                 .status(laptopDTO.getStatus())
@@ -76,13 +78,15 @@ public class LaptopServiceImpl implements LaptopService {
         laptop.setLaptopModel(laptopModel);
 //        laptopModel.addLaptop(laptop);
 
-        laptopRepository.save(laptop);
+        Laptop laptopExisting = laptopRepository.save(laptop);
+
+        return convertToDTO(laptopExisting);
     }
 
     // **4. Cập nhật Laptop**
     @Override
     @Transactional
-    public void updateLaptop(UUID laptopId, LaptopDTO updatedLaptopDTO) {
+    public LaptopDTO updateLaptop(UUID laptopId, LaptopDTO updatedLaptopDTO) {
 
         Laptop existingLaptop = laptopRepository.findById(laptopId)
                 .orElseThrow(() -> new EntityNotFoundException("Laptop not found"));
@@ -100,7 +104,8 @@ public class LaptopServiceImpl implements LaptopService {
         existingLaptop.setMFG(updatedLaptopDTO.getMfg());
         existingLaptop.setStatus(updatedLaptopDTO.getStatus());
 
-        laptopRepository.save(existingLaptop);
+        Laptop laptopExisting = laptopRepository.save(existingLaptop);
+        return convertToDTO(laptopExisting);
     }
 
     // **5. Xóa Laptop theo ID**
@@ -114,5 +119,15 @@ public class LaptopServiceImpl implements LaptopService {
 //        laptopModel.removeLaptop(laptop);
 
         laptopRepository.deleteById(id);
+    }
+
+    private LaptopDTO convertToDTO(Laptop laptop) {
+        return LaptopDTO.builder()
+                .macId(laptop.getMacId())
+                .status(laptop.getStatus())
+                .laptopModelId(laptop.getLaptopModel() == null ? null
+                        : laptop.getLaptopModel().getId())
+                .mfg(laptop.getMFG())
+                .build();
     }
 }

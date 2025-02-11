@@ -1,6 +1,9 @@
 package com.example.demo.Service.Impl;
 
+import com.example.demo.DTO.ImageDTO;
+import com.example.demo.DTO.OrderDTO;
 import com.example.demo.DTO.OrderDetailDTO;
+import com.example.demo.Models.Image;
 import com.example.demo.Models.LaptopModel;
 import com.example.demo.Models.Order;
 import com.example.demo.Models.OrderDetail;
@@ -63,7 +66,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
 
     @Transactional
     @Override
-    public void createOrderDetail(OrderDetailDTO orderDetailDTO) {
+    public OrderDetailDTO createOrderDetail(OrderDetailDTO orderDetailDTO) {
         Order order = orderRepository.findById(orderDetailDTO.getOrderId())
                 .orElseThrow(() -> new EntityNotFoundException("Order  not found!"));
 
@@ -78,12 +81,14 @@ public class OrderDetailServiceImpl implements OrderDetailService {
                 .price(orderDetailDTO.getPrice())
                 .build();
 
-        orderDetailRepository.save(orderDetail);
+        OrderDetail orderDetailExisting = orderDetailRepository.save(orderDetail);
+
+        return convertToDTO(orderDetailExisting);
     }
 
     @Transactional
     @Override
-    public void updateOrderDetail(UUID id, OrderDetailDTO orderDetailDTO) {
+    public OrderDetailDTO updateOrderDetail(UUID id, OrderDetailDTO orderDetailDTO) {
         OrderDetail existingOrderDetail = orderDetailRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found!"));
 
@@ -98,7 +103,9 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         existingOrderDetail.setQuantity(orderDetailDTO.getQuantity());
         existingOrderDetail.setPrice(orderDetailDTO.getPrice());
 
-        orderDetailRepository.save(existingOrderDetail);
+        OrderDetail orderDetailExisting = orderDetailRepository.save(existingOrderDetail);
+
+        return  convertToDTO(orderDetailExisting);
     }
 
     @Transactional
@@ -108,5 +115,15 @@ public class OrderDetailServiceImpl implements OrderDetailService {
                 .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found!"));
 
         orderDetailRepository.delete(existingOrderDetail);
+    }
+
+    private OrderDetailDTO convertToDTO(OrderDetail orderDetail) {
+        return OrderDetailDTO.builder()
+                .id(orderDetail.getId())
+                .orderId(orderDetail.getId())
+                .laptopModelId(orderDetail.getLaptopModel().getId())
+                .quantity(orderDetail.getQuantity())
+                .price(orderDetail.getPrice())
+                .build();
     }
 }

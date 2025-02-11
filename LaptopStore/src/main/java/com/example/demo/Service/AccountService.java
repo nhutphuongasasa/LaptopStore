@@ -8,7 +8,7 @@ import com.example.demo.DTO.AccountDTO;
 public interface AccountService {
     public List<AccountDTO> getAllAccounts();
     public AccountDTO getAccountById(UUID id);
-    public void createAccount(AccountDTO accountDTO);
-    public void updateAccount(UUID id, AccountDTO updatedAccount);
+    public AccountDTO createAccount(AccountDTO accountDTO);
+    public AccountDTO updateAccount(UUID id, AccountDTO updatedAccount);
     public void deleteAccount(UUID id);
 }

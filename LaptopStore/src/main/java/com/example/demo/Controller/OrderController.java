@@ -1,6 +1,8 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.OrderDTO;
+import com.example.demo.Models.Order;
 import com.example.demo.Service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,36 +23,54 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<?> getAllOrders() {
-            List<OrderDTO> orders = orderService.getAllOrders();
-            return ResponseEntity.ok(orders);
+
+        return ResponseEntity.ok(DataResponse.<List<OrderDTO>>builder()
+                .success(true)
+                .message("Orders retrieved successfully")
+                .data(orderService.getAllOrders())
+                .build());
     }
 
     // Fetch Order theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable UUID id) {
-            OrderDTO orderDTO = orderService.getOrderById(id);
-            return ResponseEntity.ok(orderDTO);
+
+        return ResponseEntity.ok(DataResponse.<OrderDTO>builder()
+                .success(true)
+                .message("Order retrieved successfully")
+                .data(orderService.getOrderById(id))
+                .build());
     }
 
     // Tạo mới một Order
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody OrderDTO orderDTO) {
-            orderService.createOrder(orderDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Order created successfully!");
+            ;
+        return ResponseEntity.ok(DataResponse.<OrderDTO>builder()
+                .success(true)
+                .message("Order created successfully")
+                .data(orderService.createOrder(orderDTO))
+                .build());
     }
 
     // Cập nhật Order theo ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updateOrder(@PathVariable UUID id, @RequestBody OrderDTO orderDTO) {
-            orderService.updateOrder(id, orderDTO);
-            return ResponseEntity.ok("Order updated successfully!");
+
+        return ResponseEntity.ok(DataResponse.<OrderDTO>builder()
+                .success(true)
+                .message("Order updated successfully")
+                .data(orderService.updateOrder(id, orderDTO))
+                .build());
     }
 
     // Xóa Order theo ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable UUID id) {
             orderService.deleteOrder(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("Order created successfully")
+                .build());
     }
 }

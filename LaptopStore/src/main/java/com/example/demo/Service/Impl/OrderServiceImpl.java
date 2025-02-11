@@ -2,6 +2,7 @@ package com.example.demo.Service.Impl;
 
 import com.example.demo.Common.Enums;
 import com.example.demo.DTO.OrderDTO;
+import com.example.demo.DTO.OrderDetailDTO;
 import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.OrderService;
@@ -38,12 +39,12 @@ public class OrderServiceImpl implements OrderService {
                         .customerId(order.getCustomer().getId())
                         .dateCreate(order.getDateCreate())
                         .status(order.getStatus())
-                        .OrderDetails(order.getOrderDetailList() == null
+                        .orderDetails(order.getOrderDetailList() == null
                                 ? Collections.emptyList()
                                 : order.getOrderDetailList().stream()
                                 .map(OrderDetail::getId)
                                 .collect(Collectors.toList()))
-                        .Payments(order.getPaymentList() == null
+                        .payments(order.getPaymentList() == null
                                 ? Collections.emptyList()
                                 : order.getPaymentList().stream()
                                 .map(Payment::getId)
@@ -63,12 +64,12 @@ public class OrderServiceImpl implements OrderService {
                 .customerId(order.getCustomer().getId())
                 .dateCreate(order.getDateCreate())
                 .status(order.getStatus())
-                .OrderDetails(order.getOrderDetailList() == null
+                .orderDetails(order.getOrderDetailList() == null
                         ? Collections.emptyList()
                         : order.getOrderDetailList().stream()
                         .map(OrderDetail::getId)
                         .collect(Collectors.toList()))
-                .Payments(order.getPaymentList() == null
+                .payments(order.getPaymentList() == null
                         ? Collections.emptyList()
                         : order.getPaymentList().stream()
                         .map(Payment::getId)
@@ -76,55 +77,73 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
+    @Transactional
     @Override
-    public void createOrder(OrderDTO orderDTO) {
+    public OrderDTO createOrder(OrderDTO orderDTO) {
         Customer customer = customerRepository.findById(orderDTO.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
-
-        List<OrderDetail> orderDetails = Optional.ofNullable(orderDTO.getOrderDetails())
-                .orElse(Collections.emptyList()) // Nếu null thì gán list rỗng
-                .stream()
-                .map(orderDetailId -> orderDetailRepository.findById(orderDetailId)
-                        .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found!")))
-                .toList();
 
         Order order = Order.builder()
                 .customer(customer)
                 .dateCreate(LocalDateTime.now())
-                .id(null)
-                .orderDetailList(orderDetails)
+                .orderDetailList(null)
                 .paymentList(null)
                 .status(Enums.OrderStatus.Pending)
                 .build();
 
-        orderRepository.save(order);
+        Order orderExisting = orderRepository.save(order);
+
+        return convertToDTO(orderExisting);
     }
+
 
     @Transactional
     @Override
-    public void updateOrder(UUID id, OrderDTO orderDTO) {
-            Order existingOrder = orderRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
+    public OrderDTO updateOrder(UUID id, OrderDTO orderDTO) {
+        Order existingOrder = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
 
-            Customer customer = customerRepository.findById(orderDTO.getCustomerId())
-                    .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
+        existingOrder.setStatus(orderDTO.getStatus());
+        existingOrder.setDateCreate(orderDTO.getDateCreate());
+        //cap nhat danh sach orderdetail
+        if (orderDTO.getOrderDetails() == null || orderDTO.getOrderDetails().isEmpty()) {
+            existingOrder.getOrderDetailList().clear();
+        } else {
+            List<OrderDetail> newOrderDetails = orderDTO.getOrderDetails().stream()
+                    .map(orderDetailId -> orderDetailRepository.findById(orderDetailId)
+                            .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found"))).toList();
+            //loai bo nhung orderdetail khong co trong danh sach dto
+            existingOrder.getOrderDetailList().removeIf(orderDetail -> !newOrderDetails.contains(orderDetail));
+            //them nhung orderdetail moi
+            newOrderDetails.forEach(orderDetail -> {
+                if (!existingOrder.getOrderDetailList().contains(orderDetail)) {
+                    orderDetail.setOrder(existingOrder);
+                    existingOrder.getOrderDetailList().add(orderDetail);
+                }
+            });
+        }
 
-            existingOrder.setCustomer(customer);
-            existingOrder.setStatus(orderDTO.getStatus());
-            existingOrder.setDateCreate(orderDTO.getDateCreate());
+        if (orderDTO.getPayments() == null || orderDTO.getPayments().isEmpty()) {
+            existingOrder.getPaymentList().clear();
+        } else {
+            List<Payment> newPayments = orderDTO.getPayments().stream()
+                    .map(paymentId -> paymentRepository.findById(paymentId)
+                            .orElseThrow(() -> new EntityNotFoundException("Payment not found"))).toList();
 
-            if (orderDTO.getOrderDetails() == null || orderDTO.getOrderDetails().isEmpty()) {
-                existingOrder.getOrderDetailList().removeIf(orderDetail -> true);
-            } else {
-                existingOrder.getOrderDetailList().removeIf(orderDetail -> true);
-                existingOrder.setOrderDetailList(orderDTO.getOrderDetails().stream()
-                        .map(orderDetailId -> orderDetailRepository.findById(orderDetailId)
-                                .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found"))).collect(Collectors.toList()));
-            }
+            existingOrder.getPaymentList().removeIf(payment -> !newPayments.contains(payment));
 
-            orderRepository.save(existingOrder);
+            newPayments.forEach(payment -> {
+                if (!existingOrder.getPaymentList().contains(payment)) {
+                    payment.setOrder(existingOrder);
+                    existingOrder.getPaymentList().add(payment);
+                }
+            });
+        }
+
+        Order order = orderRepository.save(existingOrder);
+
+        return convertToDTO(order);
     }
-
 
     @Override
     public void deleteOrder(UUID id) {
@@ -134,5 +153,21 @@ public class OrderServiceImpl implements OrderService {
         existingOrder.getOrderDetailList().forEach(orderDetail -> orderDetail.setOrder(null));
         existingOrder.getPaymentList().forEach(payment -> payment.setOrder(null));
         orderRepository.delete(existingOrder);
+    }
+
+    private OrderDTO convertToDTO(Order order) {
+        return OrderDTO.builder()
+                .id(order.getId())
+                .payments(order.getPaymentList() == null ? null :
+                        order.getPaymentList().stream()
+                                .map(Payment::getId)
+                                .collect(Collectors.toList()))
+                .orderDetails(order.getOrderDetailList() == null ? null :
+                        order.getOrderDetailList().stream()
+                                .map(OrderDetail::getId)
+                                .collect(Collectors.toList()))
+                .status(order.getStatus())
+                .customerId(order.getCustomer().getId())
+                .build();
     }
 }

@@ -68,29 +68,24 @@ public class CommentServiceImpl implements CommentService {
     // 3. Tạo một Comment mới
     @Override
     @Transactional
-    public void createComment(CommentDTO commentDTO) {
+    public CommentDTO createComment(CommentDTO commentDTO) {
         if(commentDTO.getBody() == null){
             throw  new IllegalArgumentException("body cannot be null");
         }
 
+        Account account = accountRepository.findById(commentDTO.getAccountId())
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
+        LaptopModel laptopModel = laptopModelRepository.findById(commentDTO.getLaptopModelId())
+                .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found"));
+
         Comment comment = Comment.builder()
                 .replies(null)
                 .id(null)
+                .account(account)
                 .body(commentDTO.getBody())
+                .laptopModel(laptopModel)
                 .build();
-
-        Account account = accountRepository.findById(commentDTO.getAccountId())
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-        comment.setAccount(account);
-
-        if(commentDTO.getLaptopModelId() == null){
-            throw new IllegalArgumentException("LaptopModel cannot be null");
-        } else{
-            LaptopModel laptopModel = laptopModelRepository.findById(commentDTO.getLaptopModelId())
-                    .orElseThrow(() -> new EntityNotFoundException("LaptopModel not found"));
-            comment.setLaptopModel(laptopModel);
-
-        }
 
         if (commentDTO.getParentId() != null) {
             Comment parentComment = commentRepository.findById(commentDTO.getParentId())
@@ -98,13 +93,15 @@ public class CommentServiceImpl implements CommentService {
             comment.setParent(parentComment);
         }
 
-        commentRepository.save(comment);
+        Comment commentExisting = commentRepository.save(comment);
+
+        return convertToDTO(commentExisting);
     }
 
     // 4. Cập nhật một Comment
     @Override
     @Transactional
-    public void updateComment(UUID commentId, CommentDTO commentDTO) {
+    public CommentDTO updateComment(UUID commentId, CommentDTO commentDTO) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
 
@@ -140,7 +137,9 @@ public class CommentServiceImpl implements CommentService {
             comment.setReplies(replies);
         }
 
-        commentRepository.save(comment);
+        Comment commentExisting = commentRepository.save(comment);
+
+        return convertToDTO(commentExisting);
     }
 
     // 5. Xóa Comment theo ID
@@ -151,5 +150,19 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
 
         commentRepository.delete(commentExisting);
+    }
+
+    private CommentDTO convertToDTO(Comment comment) {
+        return CommentDTO.builder()
+                .id(comment.getId())
+                .accountId(comment.getAccount().getId())
+                .parentId(comment.getParent() == null ? null : comment.getParent().getId())
+                .body(comment.getBody())
+                .laptopModelId(comment.getLaptopModel().getId())
+                .replies(comment.getReplies() == null ? null :
+                        comment.getReplies().stream()
+                        .map(Comment :: getId)
+                        .collect(Collectors.toList()))
+                .build();
     }
 }

@@ -61,7 +61,7 @@ public class ImageServiceImpl implements ImageService {
 
     // 3. Tạo mới một Image
     @Override
-    public void createImage(ImageDTO imageDTO) {
+    public ImageDTO createImage(ImageDTO imageDTO) {
         Image image = Image.builder()
                 .id(null)
                 .imageUrl(imageDTO.getImageUrl())
@@ -76,11 +76,13 @@ public class ImageServiceImpl implements ImageService {
         }else{
             throw  new IllegalArgumentException("LaptopModel cannot be null");
         }
-        imageRepository.save(image);
+        Image imageExisting = imageRepository.save(image);
+
+        return convertToDTO(imageExisting);
     }
 
     @Override
-    public void updateImage(UUID imageId, ImageDTO imageDTO){
+    public ImageDTO updateImage(UUID imageId, ImageDTO imageDTO){
         Image imageExisting = imageRepository.findById(imageId)
                 .orElseThrow(() -> new EntityNotFoundException("Image not found"));
         imageExisting.setImageUrl(imageDTO.getImageUrl());
@@ -96,7 +98,8 @@ public class ImageServiceImpl implements ImageService {
             imageExisting.setLaptopModelList(laptopModels);
         }
 
-        imageRepository.save(imageExisting);
+        Image image = imageRepository.save(imageExisting);
+        return convertToDTO(image);
     }
 
     // 5. Xóa Image theo ID
@@ -108,5 +111,16 @@ public class ImageServiceImpl implements ImageService {
         image.setLaptopModelList(null);
 
         imageRepository.delete(image);
+    }
+
+    private ImageDTO convertToDTO(Image image) {
+        return ImageDTO.builder()
+                .id(image.getId())
+                .laptopModelIds(image.getLaptopModelList() == null ? null
+                        : image.getLaptopModelList().stream()
+                        .map(LaptopModel::getId)
+                        .collect(Collectors.toList()))
+                .imageUrl(image.getImageUrl())
+                .build();
     }
 }

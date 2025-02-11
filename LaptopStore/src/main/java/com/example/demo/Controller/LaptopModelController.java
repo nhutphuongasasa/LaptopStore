@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
+import com.example.demo.DTO.LaptopDTO;
 import com.example.demo.DTO.LaptopModelDTO;
 import com.example.demo.Service.LaptopModelService;
 import org.springframework.http.HttpStatus;
@@ -23,17 +25,22 @@ public class LaptopModelController {
     @GetMapping
     public ResponseEntity<?> getAllLaptopModels() {
 
-            List<LaptopModelDTO> laptopModels = laptopModelService.getAllLaptopModels();
-            return ResponseEntity.ok(laptopModels);
-
+        return ResponseEntity.ok(DataResponse.<List<LaptopModelDTO>>builder()
+                .success(true)
+                .message("LaptopModel retrieved successfully")
+                .data(laptopModelService.getAllLaptopModels())
+                .build());
     }
 
     // 2. Lấy LaptopModel theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getLaptopModelById(@PathVariable UUID id) {
 
-            LaptopModelDTO laptopModel = laptopModelService.getLaptopModelById(id);
-            return ResponseEntity.ok(laptopModel);
+        return ResponseEntity.ok(DataResponse.<LaptopModelDTO>builder()
+                .success(true)
+                .message("LaptopModel retrieved successfully")
+                .data(laptopModelService.getLaptopModelById(id))
+                .build());
 
     }
 
@@ -41,8 +48,12 @@ public class LaptopModelController {
     @PostMapping
     public ResponseEntity<?> createLaptopModel(@RequestBody LaptopModelDTO laptopModelDTO) {
 
-            laptopModelService.createLaptopModel(laptopModelDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body("LaptopModel created successfully.");
+
+        return ResponseEntity.ok(DataResponse.<LaptopModelDTO>builder()
+                .success(true)
+                .message("LaptopModel created successfully")
+                .data(laptopModelService.createLaptopModel(laptopModelDTO))
+                .build());
 
     }
 
@@ -50,8 +61,12 @@ public class LaptopModelController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateLaptopModel(@PathVariable UUID id, @RequestBody LaptopModelDTO laptopModelDTO) {
 
-            laptopModelService.updateLaptopModel(id, laptopModelDTO);
-            return ResponseEntity.ok("LaptopModel updated successfully.");
+
+        return ResponseEntity.ok(DataResponse.<LaptopModelDTO>builder()
+                .success(true)
+                .message("LaptopModel updated successfully")
+                .data(laptopModelService.updateLaptopModel(id, laptopModelDTO))
+                .build());
 
     }
 
@@ -60,7 +75,10 @@ public class LaptopModelController {
     public ResponseEntity<?> deleteLaptopModel(@PathVariable UUID id) {
 
             laptopModelService.deleteLaptopModel(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.<LaptopModelDTO>builder()
+                .success(true)
+                .message("LaptopModel deleted successfully")
+                .build());
 
     }
 }

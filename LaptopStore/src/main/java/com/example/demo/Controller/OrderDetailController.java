@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
+import com.example.demo.DTO.ImageDTO;
 import com.example.demo.DTO.OrderDetailDTO;
 import com.example.demo.Service.OrderDetailService;
 import org.springframework.http.HttpStatus;
@@ -21,35 +23,54 @@ public class OrderDetailController {
 
     // Get all order details
     @GetMapping
-    public ResponseEntity<List<OrderDetailDTO>> getAllOrderDetails() {
-        List<OrderDetailDTO> orderDetails = orderDetailService.getAllOrderDetails();
-        return ResponseEntity.ok(orderDetails);
+    public ResponseEntity<DataResponse<List<OrderDetailDTO>>> getAllOrderDetails() {
+
+        return ResponseEntity.ok(DataResponse.<List<OrderDetailDTO>>builder()
+                .success(true)
+                .message("OrderDetail retrieved successfully")
+                .data(orderDetailService.getAllOrderDetails())
+                .build());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderDetailDTO> getOrderDetailById(@PathVariable UUID id) {
-        OrderDetailDTO orderDetail = orderDetailService.getOrderDetailById(id);
-        return ResponseEntity.ok(orderDetail);
+    public ResponseEntity<DataResponse<OrderDetailDTO>> getOrderDetailById(@PathVariable UUID id) {
+
+        return ResponseEntity.ok(DataResponse.<OrderDetailDTO>builder()
+                .success(true)
+                .message("OrderDetail retrieved successfully")
+                .data(orderDetailService.getOrderDetailById(id))
+                .build());
     }
 
     // Create new order detail
     @PostMapping
     public ResponseEntity<?> createOrderDetail(@RequestBody OrderDetailDTO orderDetailDTO) {
-        orderDetailService.createOrderDetail(orderDetailDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Order created successfully!");
+
+        return ResponseEntity.ok(DataResponse.<OrderDetailDTO>builder()
+                .success(true)
+                .message("OrderDetail created successfully")
+                .data(orderDetailService.createOrderDetail(orderDetailDTO))
+                .build());
     }
 
     // Update order detail by ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updateOrderDetail(@PathVariable UUID id, @RequestBody OrderDetailDTO orderDetailDTO) {
-        orderDetailService.updateOrderDetail(id, orderDetailDTO);
-        return ResponseEntity.ok("Order updated successfully");
+
+        return ResponseEntity.ok(DataResponse.<OrderDetailDTO>builder()
+                .success(true)
+                .message("OrderDetail updated successfully")
+                .data(orderDetailService.updateOrderDetail(id, orderDetailDTO))
+                .build());
     }
 
     // Delete order detail by ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrderDetail(@PathVariable UUID id) {
+    public ResponseEntity<?> deleteOrderDetail(@PathVariable UUID id) {
         orderDetailService.deleteOrderDetail(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("OrderDetail deleted successfully")
+                .build());
     }
 }

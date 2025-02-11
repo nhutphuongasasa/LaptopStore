@@ -11,9 +11,9 @@ public interface LaptopService {
 
     LaptopDTO getLaptopById(UUID id);
 
-    void createLaptop(LaptopDTO laptopDTO);
+    LaptopDTO createLaptop(LaptopDTO laptopDTO);
 
-    void updateLaptop(UUID id, LaptopDTO updatedLaptop);
+    LaptopDTO updateLaptop(UUID id, LaptopDTO updatedLaptop);
 
     void deleteLaptop(UUID id);
 }

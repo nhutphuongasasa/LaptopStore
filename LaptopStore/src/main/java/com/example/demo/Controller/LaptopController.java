@@ -1,5 +1,6 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.LaptopDTO;
 import com.example.demo.Service.LaptopService;
 
@@ -22,37 +23,53 @@ public class LaptopController {
 
     // 1. Lấy tất cả Laptop
     @GetMapping
-    public ResponseEntity<List<LaptopDTO>> getAllLaptops() {
-        List<LaptopDTO> laptops = laptopService.getAllLaptops();
-        return ResponseEntity.ok(laptops);
+    public ResponseEntity<DataResponse<List<LaptopDTO>>> getAllLaptops() {
+        return ResponseEntity.ok(DataResponse.<List<LaptopDTO>>builder()
+                .success(true)
+                .message("Laptop retrieved successfully")
+                .data(laptopService.getAllLaptops())
+                .build());
     }
 
     // 2. Lấy Laptop chi tiết theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getLaptopById(@PathVariable UUID id) {
-            LaptopDTO laptop = laptopService.getLaptopById(id);
-            return ResponseEntity.ok(laptop);
+        return ResponseEntity.ok(DataResponse.<LaptopDTO>builder()
+                .success(true)
+                .message("Laptop retrieved successfully")
+                .data(laptopService.getLaptopById(id))
+                .build());
     }
 
     // 3. Tạo mới Laptop
     @PostMapping
-    public ResponseEntity<String> createLaptop(@RequestBody LaptopDTO laptopDTO) {
-            laptopService.createLaptop(laptopDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Laptop created successfully!");
+    public ResponseEntity<?> createLaptop(@RequestBody LaptopDTO laptopDTO) {
+            ;
+        return ResponseEntity.ok(DataResponse.<LaptopDTO>builder()
+                .success(true)
+                .message("Laptop created successfully")
+                .data(laptopService.createLaptop(laptopDTO))
+                .build());
     }
 
     // 4. Cập nhật Laptop
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateLaptop(@PathVariable UUID id, @RequestBody LaptopDTO laptopDTO) {
-            laptopService.updateLaptop(id, laptopDTO);
-            return ResponseEntity.ok("Laptop updated successfully!");
+    public ResponseEntity<?> updateLaptop(@PathVariable UUID id, @RequestBody LaptopDTO laptopDTO) {
+
+        return ResponseEntity.ok(DataResponse.<LaptopDTO>builder()
+                .success(true)
+                .message("Laptop updated successfully")
+                .data(laptopService.updateLaptop(id,laptopDTO))
+                .build());
     }
 
     // 5. Xóa Laptop
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLaptop(@PathVariable UUID id) {
             laptopService.deleteLaptop(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.<LaptopDTO>builder()
+                .success(true)
+                .message("Laptop deleted successfully")
+                .build());
     }
 }

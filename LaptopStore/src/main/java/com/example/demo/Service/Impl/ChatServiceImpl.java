@@ -1,9 +1,12 @@
 package com.example.demo.Service.Impl;
 
 
+import com.example.demo.DTO.CartDTO;
 import com.example.demo.DTO.ChatDTO;
 import com.example.demo.Models.Account;
+import com.example.demo.Models.Cart;
 import com.example.demo.Models.Chat;
+import com.example.demo.Models.LaptopOnCart;
 import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.ChatRepository;
 import com.example.demo.Service.ChatService;
@@ -13,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,11 +41,23 @@ public class ChatServiceImpl implements ChatService {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
         List<ChatDTO> chatDTOList = chatRepository.findBySenderId(account).stream()
-                .map(chat -> modelMapper.map(chat, ChatDTO.class))
+                .map(chat -> ChatDTO.builder()
+                        .id(chat.getId())
+                        .senderId(chat.getSenderId().getId())
+                        .receiverId(chat.getReceiverId().getId())
+                        .message(chat.getMessage())
+                        .createAt(chat.getCreateAt())
+                        .build())
                 .collect(Collectors.toList());
 
         chatRepository.findByReceiverId(account).stream()
-                .map(chat -> modelMapper.map(chat, ChatDTO.class))
+                .map(chat -> ChatDTO.builder()
+                        .id(chat.getId())
+                        .senderId(chat.getSenderId().getId())
+                        .receiverId(chat.getReceiverId().getId())
+                        .message(chat.getMessage())
+                        .createAt(chat.getCreateAt())
+                        .build())
                 .forEach(chatDTOList::add);
 
         return chatDTOList;
@@ -50,13 +67,19 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public ChatDTO getChatById(UUID id) {
         Chat chat = chatRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chat not found with ID: " + id));
-        return modelMapper.map(chat, ChatDTO.class);
+                .orElseThrow(() -> new EntityNotFoundException("Chat not found with ID: " + id));
+        return ChatDTO.builder()
+                .id(chat.getId())
+                .senderId(chat.getSenderId().getId())
+                .receiverId(chat.getReceiverId().getId())
+                .message(chat.getMessage())
+                .createAt(chat.getCreateAt())
+                .build();
     }
 
     @Transactional
     @Override
-    public void createChat(ChatDTO chatDTO) {
+    public ChatDTO createChat(ChatDTO chatDTO) {
         Account sender = accountRepository.findById(chatDTO.getSenderId())
                 .orElseThrow(() -> new EntityNotFoundException("Sender Account not found"));
         Account receiver = accountRepository.findById(chatDTO.getReceiverId())
@@ -69,16 +92,20 @@ public class ChatServiceImpl implements ChatService {
                 .createAt(LocalDateTime.now())
                 .build();
 
+        Chat chatExisting = chatRepository.save(chat);
+
         sender.getChatSend().add(chat);
         receiver.getChatReceive().add(chat);
 
         accountRepository.save(sender);
         accountRepository.save(receiver);
+
+        return convertToDTO(chatExisting);
     }
 
     @Transactional
     @Override
-    public void updateChat(UUID chatId, ChatDTO chatDTO) {
+    public ChatDTO updateChat(UUID chatId, ChatDTO chatDTO) {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new EntityNotFoundException("Chat not found"));
 
@@ -92,6 +119,8 @@ public class ChatServiceImpl implements ChatService {
         chat.setCreateAt(LocalDateTime.now());
 
         chatRepository.save(chat);
+
+        return convertToDTO(chat);
     }
 
     @Transactional
@@ -107,5 +136,16 @@ public class ChatServiceImpl implements ChatService {
         receiver.getChatReceive().remove(chat);
 
         chatRepository.delete(chat);
+    }
+
+    private ChatDTO convertToDTO(Chat chat) {
+        return ChatDTO.builder()
+                .id(chat.getId())
+                .message(chat.getMessage())
+                .createAt(chat.getCreateAt())
+                .receiverId(chat.getReceiverId().getId())
+                .senderId(chat.getSenderId().getId())
+                .build();
+
     }
 }

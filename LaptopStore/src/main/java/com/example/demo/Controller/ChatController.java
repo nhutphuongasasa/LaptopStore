@@ -1,5 +1,6 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.ChatDTO;
 import com.example.demo.Service.ChatService;
 import org.springframework.http.HttpStatus;
@@ -21,9 +22,13 @@ public class ChatController {
 
     // Lấy tất cả chat
     @GetMapping("/{accountId}")
-    public ResponseEntity<?> getAllChatsByAccountId(@PathVariable UUID accountId) {
-            List<ChatDTO> chatDTOList = chatService.getAllChatsByAccountId(accountId);
-            return ResponseEntity.ok(chatDTOList);
+    public ResponseEntity<DataResponse<List<ChatDTO>>> getAllChatsByAccountId(@PathVariable UUID accountId) {
+
+            return ResponseEntity.ok(DataResponse.<List<ChatDTO>>builder()
+                    .success(true)
+                    .message("Chat retrieved successfully")
+                    .data(chatService.getAllChatsByAccountId(accountId))
+                    .build());
     }
 
 
@@ -44,24 +49,33 @@ public class ChatController {
 
     // Tạo một chat mới
     @PostMapping
-    public ResponseEntity<String> createChat(@RequestBody ChatDTO chatDTO) {
-            chatService.createChat(chatDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Chat created successfully!");
+    public ResponseEntity<?> createChat(@RequestBody ChatDTO chatDTO) {
+
+            return ResponseEntity.ok(DataResponse.<ChatDTO>builder()
+                    .success(true)
+                    .message("Chat created successfully")
+                    .data(chatService.createChat(chatDTO))
+                    .build());
     }
 
     // Cập nhật chat
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateChat(@PathVariable UUID id, @RequestBody ChatDTO chatDTO) {
+    public ResponseEntity<?> updateChat(@PathVariable UUID id, @RequestBody ChatDTO chatDTO) {
 
-            chatService.updateChat(id, chatDTO);
-            return ResponseEntity.ok("Chat updated successfully!");
+        return ResponseEntity.ok(DataResponse.<ChatDTO>builder()
+                .success(true)
+                .message("Chat updated successfully")
+                .data(chatService.updateChat(id, chatDTO))
+                .build());
     }
 
     // Xóa chat
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteChat(@PathVariable UUID id) {
+    public ResponseEntity<?> deleteChat(@PathVariable UUID id) {
             chatService.deleteChat(id);
-            return ResponseEntity.ok("Chat deleted successfully!");
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("Chat deleted successfully")
+                .build());
     }
 }

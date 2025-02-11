@@ -1,5 +1,6 @@
 package com.example.demo.Service.Impl;
 
+import com.example.demo.DTO.AddressDTO;
 import com.example.demo.DTO.CartDTO;
 import com.example.demo.DTO.LaptopOnCartDTO;
 import com.example.demo.Models.*;
@@ -65,19 +66,21 @@ public class CartServiceImpl implements CartService {
 
     // Tạo mới Cart
     @Override
-    public void createCart(CartDTO cartDTO) {
+    public CartDTO createCart(CartDTO cartDTO) {
         Customer customer = customerRepository.findById(cartDTO.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
 
         Cart cart = Cart.builder()
                 .customer(customer)
                 .build();
-        cartRepository.save(cart);
+        Cart cartExisting = cartRepository.save(cart);
+
+        return convertToDTO(cartExisting);
     }
 
     // Cập nhật Cart theo ID
     @Override
-    public void updateCart(UUID id, CartDTO cartDTO) {
+    public CartDTO updateCart(UUID id, CartDTO cartDTO) {
         Cart cart = cartRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cart not found!"));
 
@@ -87,7 +90,7 @@ public class CartServiceImpl implements CartService {
         cart.setCustomer(customer);
         //loai bo toan bo laptopOnCart
         cart.getLaptopOnCarts().removeIf(laptop -> true);
-        //laay laptopOnCart moi
+        //lay laptopOnCart moi
         List<LaptopOnCart> laptopOnCarts = Optional.ofNullable(cartDTO.getLaptopOnCartIds())
                 .orElse(Collections.emptyList())
                 .stream()
@@ -97,7 +100,8 @@ public class CartServiceImpl implements CartService {
 
         cart.getLaptopOnCarts().addAll(laptopOnCarts);
 
-        cartRepository.save(cart);
+        Cart cartExisting = cartRepository.save(cart);
+        return convertToDTO(cartExisting);
     }
 
 
@@ -110,5 +114,18 @@ public class CartServiceImpl implements CartService {
         cart.getLaptopOnCarts().removeIf(laptop -> true);
 
         cartRepository.delete(cart);
+    }
+
+    private CartDTO convertToDTO(Cart cart) {
+        return CartDTO.builder()
+                .id(cart.getId())
+                .customerId(cart.getCustomer().getId())
+                .laptopOnCartIds(Optional.ofNullable(cart.getLaptopOnCarts())
+                        .orElse(Collections.emptyList())
+                        .stream()
+                        .map(LaptopOnCart::getId)
+                        .collect(Collectors.toList()))
+                .build();
+
     }
 }

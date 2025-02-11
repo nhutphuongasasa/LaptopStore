@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
+import com.example.demo.DTO.AccountDTO;
 import com.example.demo.DTO.AddressDTO;
 import com.example.demo.Service.AddressService;
 import org.springframework.http.HttpStatus;
@@ -21,37 +23,51 @@ public class AddressController {
 
     // Lấy tất cả địa chỉ của một khách hàng
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<?> getAllAddress(@PathVariable UUID customerId) {
-            List<AddressDTO> addresses = addressService.getAllAddress(customerId);
-            return ResponseEntity.ok(addresses);
+    public ResponseEntity<DataResponse<List<AddressDTO>>> getAllAddress(@PathVariable UUID customerId) {
+        return ResponseEntity.ok(DataResponse.<List<AddressDTO>>builder()
+                .success(true)
+                .message("Addresses retrieved successfully")
+                .data(addressService.getAllAddress(customerId))
+                .build());
     }
 
     // Lấy địa chỉ theo ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getAddressById(@PathVariable UUID id) {
-            AddressDTO addressDTO = addressService.getAddressById(id);
-            return ResponseEntity.ok(addressDTO);
+    public ResponseEntity<DataResponse<AddressDTO>> getAddressById(@PathVariable UUID id) {
+        AddressDTO addressDTO = addressService.getAddressById(id);
+        return ResponseEntity.ok(DataResponse.<AddressDTO>builder()
+                .success(true)
+                .message("Address retrieved successfully")
+                .data(addressDTO)
+                .build());
     }
-
     // Tạo mới địa chỉ
     @PostMapping
-    public ResponseEntity<?> createAddress(@RequestBody AddressDTO addressDTO) {
-            addressService.createAddress(addressDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Address created successfully!");
+    public ResponseEntity<DataResponse<?>> createAddress(@RequestBody AddressDTO addressDTO) {
+        return ResponseEntity.ok(DataResponse.<AddressDTO>builder()
+                        .success(true)
+                        .message("Address created successfully!")
+                        .data(addressService.createAddress(addressDTO))
+                        .build());
     }
 
     // Cập nhật thông tin địa chỉ
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAddress(@PathVariable UUID id, @RequestBody AddressDTO updatedAddress) {
-            addressService.updateAddress(id, updatedAddress);
-            return ResponseEntity.ok("Address updated successfully!");
+            return ResponseEntity.ok(DataResponse.<AddressDTO>builder()
+                    .success(true)
+                    .message("Address updated successfully!")
+                    .data(addressService.updateAddress(id,updatedAddress))
+                    .build());
     }
 
     // Xóa địa chỉ
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAddress(@PathVariable UUID id) {
             addressService.deleteAddress(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("Address deleted successfully!")
+                .build());
     }
 }

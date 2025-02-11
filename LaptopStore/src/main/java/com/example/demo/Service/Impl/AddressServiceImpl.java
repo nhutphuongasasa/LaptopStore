@@ -1,12 +1,8 @@
 package com.example.demo.Service.Impl;
 
 
-import com.example.demo.Common.*;
-import com.example.demo.Models.Account;
 import com.example.demo.Models.Address;
-import com.example.demo.Models.Chat;
 import com.example.demo.Models.Customer;
-import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.AddressRepository;
 import com.example.demo.Repository.CustomerRepository;
 import com.example.demo.Service.AddressService;
@@ -18,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -57,30 +52,43 @@ public class AddressServiceImpl implements AddressService{
     // Tạo mới địa chỉ
     @Transactional
     @Override
-    public void createAddress(AddressDTO addressDTO) {
-        Address address = modelMapper.map(addressDTO,Address.class);
+    public AddressDTO createAddress(AddressDTO addressDTO) {
         Customer  customer = customerRepository.findById(addressDTO.getCustomerId())
                            .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
-        address.setCustomer(customer);
+
+        Address address = Address.builder()
+                .id(null)
+                .customer(customer)
+                .city(addressDTO.getCity())
+                .district(addressDTO.getDistrict())
+                .ward(addressDTO.getWard())
+                .street(addressDTO.getStreet())
+                .phone(addressDTO.getPhone())
+                .build();
+
         customer.getAddressList().add(address);
-        addressRepository.save(address);
+
+        Address addressExisting = addressRepository.save(address);
+
+        return convertToDTO(addressExisting);
     }
     
     // Cập nhật thông tin địa chỉ
     @Transactional
     @Override
-    public void updateAddress(UUID idToUpdate, AddressDTO updatedAddress) {
-        //kiem tra  customer
+    public AddressDTO updateAddress(UUID idToUpdate, AddressDTO updatedAddress) {
         Customer customer = customerRepository.findById(updatedAddress.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
-        //lay address
+
         Address addressToUpdate = addressRepository.findById(idToUpdate)
                 .orElseThrow(() -> new EntityNotFoundException("Address not found"));
-        //update address
+
         modelMapper.map(updatedAddress, addressToUpdate);
         addressToUpdate.setId(idToUpdate);
 
-        addressRepository.save(addressToUpdate);
+        Address addressExisting = addressRepository.save(addressToUpdate);
+
+        return convertToDTO(addressExisting);
     }
 
 
@@ -90,14 +98,24 @@ public class AddressServiceImpl implements AddressService{
     public void deleteAddress(UUID id) {
         Address addressExisting = addressRepository.findById(id)
                         .orElseThrow(() -> new EntityNotFoundException("Address not found"));
-        Customer customer = addressExisting.getCustomer();
+        Customer customerExisting = addressExisting.getCustomer();
 
-        customer.getAddressList().remove(addressExisting);
-
-        customerRepository.save(customer);
+        customerExisting.getAddressList().remove(addressExisting);
 
         addressRepository.deleteById(id);
 
+    }
+
+    private AddressDTO convertToDTO(Address address) {
+        return AddressDTO.builder()
+                .id(address.getId())
+                .customerId(address.getCustomer().getId())
+                .city(address.getCity())
+                .district(address.getDistrict())
+                .ward(address.getWard())
+                .street(address.getStreet())
+                .phone(address.getPhone())
+                .build();
     }
 }
 

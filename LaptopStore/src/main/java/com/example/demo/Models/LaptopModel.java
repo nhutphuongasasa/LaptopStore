@@ -88,14 +88,14 @@ public class LaptopModel {
     @OneToMany(mappedBy = "laptopModel",cascade = {CascadeType.PERSIST,
             CascadeType.DETACH,
             CascadeType.MERGE,
-            CascadeType.REFRESH})
+            CascadeType.REFRESH},orphanRemoval = true)
     private List<OrderDetail> orderDetailList;
 
     @JsonIgnore
     @OneToMany(mappedBy = "laptopModel",cascade = {CascadeType.PERSIST,
             CascadeType.DETACH,
             CascadeType.MERGE,
-            CascadeType.REFRESH})
+            CascadeType.REFRESH},orphanRemoval = true)
     private List<LaptopOnCart> laptopOnCartList;
 
     // Helper method để thêm laptop

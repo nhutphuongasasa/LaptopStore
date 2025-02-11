@@ -10,9 +10,9 @@ public interface ChatService {
 
     ChatDTO getChatById(UUID id);
 
-    void createChat(ChatDTO chatDTO);
+    ChatDTO createChat(ChatDTO chatDTO);
 
-    void updateChat(UUID chatId, ChatDTO chatDTO);
+    ChatDTO updateChat(UUID chatId, ChatDTO chatDTO);
 
     void deleteChat(UUID chatId);
 }

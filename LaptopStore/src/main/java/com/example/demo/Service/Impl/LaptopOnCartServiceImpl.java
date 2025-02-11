@@ -83,13 +83,13 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
     @Override
     public void updateLaptopOnCart(UUID id, LaptopOnCartDTO laptopOnCartDTO) {
         LaptopOnCart laptopOnCart = laptopOnCartRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("LaptopOnCart with ID " + id + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("LaptopOnCart with ID " + id + " not found!"));
 
         Cart cart = cartRepository.findById(laptopOnCartDTO.getCartId())
-                .orElseThrow(() -> new RuntimeException("Cart with ID " + laptopOnCartDTO.getCartId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Cart with ID " + laptopOnCartDTO.getCartId() + " not found!"));
 
         LaptopModel laptopModel = laptopModelRepository.findById(laptopOnCartDTO.getLaptopModelId())
-                .orElseThrow(() -> new RuntimeException("Laptop Model with ID " + laptopOnCartDTO.getLaptopModelId() + " not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Laptop Model with ID " + laptopOnCartDTO.getLaptopModelId() + " not found!"));
 
         laptopOnCart.setCart(cart);
         laptopOnCart.setLaptopModel(laptopModel);
@@ -102,10 +102,8 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
     @Override
     public void deleteLaptopOnCart(UUID id) {
         LaptopOnCart laptopOnCart = laptopOnCartRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("LaptopOnCart with ID " + id + " not found!"));
-        laptopOnCart.setLaptopModel(null);
-        laptopOnCart.setCart(null);
-        laptopOnCartRepository.save(laptopOnCart);
+                .orElseThrow(() -> new EntityNotFoundException("LaptopOnCart with ID " + id + " not found!"));
+
         laptopOnCartRepository.delete(laptopOnCart);
     }
 }
