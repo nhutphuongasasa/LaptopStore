@@ -1,6 +1,8 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.PaymentMethodDTO;
+import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Service.PaymentMethodService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,33 +24,51 @@ public class PaymentMethodController {
 
     @GetMapping
     public ResponseEntity<?> getAllPaymentMethods() {
-            List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllPaymentMethods();
-            return ResponseEntity.ok(paymentMethods);
+
+        return ResponseEntity.ok(DataResponse.<List<PaymentMethodDTO>>builder()
+                .success(true)
+                .message("PaymentMethod retrieved successfully")
+                .data(paymentMethodService.getAllPaymentMethods())
+                .build());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentMethodById(@PathVariable UUID id) {
-            PaymentMethodDTO paymentMethod = paymentMethodService.getPaymentMethodById(id);
-            return ResponseEntity.ok(paymentMethod);
+
+        return ResponseEntity.ok(DataResponse.<PaymentMethodDTO>builder()
+                .success(true)
+                .message("PaymentMethod retrieved successfully")
+                .data(paymentMethodService.getPaymentMethodById(id))
+                .build());
     }
 
 
     @PostMapping
-    public ResponseEntity<String> createPaymentMethod(@RequestBody PaymentMethodDTO paymentMethodDTO) {
-            paymentMethodService.createPaymentMethod(paymentMethodDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Payment Method created successfully!");
+    public ResponseEntity<?> createPaymentMethod(@RequestBody PaymentMethodDTO paymentMethodDTO) {
+
+        return ResponseEntity.ok(DataResponse.<PaymentMethodDTO>builder()
+                .success(true)
+                .message("PaymentMethod created successfully")
+                .data(paymentMethodService.createPaymentMethod(paymentMethodDTO))
+                .build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updatePaymentMethod(@PathVariable UUID id, @RequestBody PaymentMethodDTO paymentMethodDTO) {
-            paymentMethodService.updatePaymentMethod(id, paymentMethodDTO);
-            return ResponseEntity.ok("Payment Method updated successfully!"); // HTTP 200 (OK)
+    public ResponseEntity<?> updatePaymentMethod(@PathVariable UUID id, @RequestBody PaymentMethodDTO paymentMethodDTO) {
+
+        return ResponseEntity.ok(DataResponse.<PaymentMethodDTO>builder()
+                .success(true)
+                .message("PaymentMethod updated successfully")
+                .data(paymentMethodService.updatePaymentMethod(id, paymentMethodDTO))
+                .build()); // HTTP 200 (OK)
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deletePaymentMethod(@PathVariable UUID id) {
+    public ResponseEntity<?> deletePaymentMethod(@PathVariable UUID id) {
             paymentMethodService.deletePaymentMethod(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("PaymentMethod deleted successfully")
+                .build());
     }
 }

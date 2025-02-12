@@ -1,6 +1,8 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.LaptopOnCartDTO;
+import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Service.LaptopOnCartService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,46 +23,60 @@ public class LaptopOnCartController {
 
     // 1. Lấy tất cả LaptopOnCart
     @GetMapping
-    public ResponseEntity<List<LaptopOnCartDTO>> getAllLaptopOnCarts() {
+    public ResponseEntity<?> getAllLaptopOnCarts() {
 
-            List<LaptopOnCartDTO> laptopOnCarts = laptopOnCartService.getAllLaptopOnCarts();
-            return ResponseEntity.ok(laptopOnCarts);
-
+        return ResponseEntity.ok(DataResponse.<List<LaptopOnCartDTO>>builder()
+                .success(true)
+                .message("Sale retrieved successfully")
+                .data( laptopOnCartService.getAllLaptopOnCarts())
+                .build());
     }
 
     // 2. Lấy LaptopOnCart theo ID
     @GetMapping("/{id}")
     public ResponseEntity<Object> getLaptopOnCartById(@PathVariable UUID id) {
 
-            LaptopOnCartDTO laptopOnCart = laptopOnCartService.getLaptopOnCartById(id);
-            return ResponseEntity.ok(laptopOnCart);
+        return ResponseEntity.ok(DataResponse.<LaptopOnCartDTO>builder()
+                .success(true)
+                .message("Sale retrieved successfully")
+                .data(laptopOnCartService.getLaptopOnCartById(id))
+                .build());
 
     }
 
     // 3. Tạo mới LaptopOnCart
     @PostMapping
-    public ResponseEntity<String> createLaptopOnCart(@RequestBody LaptopOnCartDTO laptopOnCartDTO) {
+    public ResponseEntity<?> createLaptopOnCart(@RequestBody LaptopOnCartDTO laptopOnCartDTO) {
 
-            laptopOnCartService.createLaptopOnCart(laptopOnCartDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body("LaptopOnCart created successfully!");
+        return ResponseEntity.ok(DataResponse.<LaptopOnCartDTO>builder()
+                .success(true)
+                .message("Sale created successfully")
+                .data(laptopOnCartService.createLaptopOnCart(laptopOnCartDTO))
+                .build());
 
     }
 
     // 4. Cập nhật LaptopOnCart
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateLaptopOnCart(@PathVariable UUID id, @RequestBody LaptopOnCartDTO laptopOnCartDTO) {
+    public ResponseEntity<?> updateLaptopOnCart(@PathVariable UUID id, @RequestBody LaptopOnCartDTO laptopOnCartDTO) {
 
-            laptopOnCartService.updateLaptopOnCart(id, laptopOnCartDTO);
-            return ResponseEntity.ok("LaptopOnCart updated successfully!");
+        return ResponseEntity.ok(DataResponse.<LaptopOnCartDTO>builder()
+                .success(true)
+                .message("Sale updated successfully")
+                .data(laptopOnCartService.updateLaptopOnCart(id, laptopOnCartDTO))
+                .build());
 
     }
 
     // 5. Xóa LaptopOnCart
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteLaptopOnCart(@PathVariable UUID id) {
+    public ResponseEntity<?> deleteLaptopOnCart(@PathVariable UUID id) {
 
             laptopOnCartService.deleteLaptopOnCart(id);
-            return ResponseEntity.ok("LaptopOnCart deleted successfully!");
+        return ResponseEntity.ok(DataResponse.<LaptopOnCartDTO>builder()
+                .success(true)
+                .message("Sale retrieved successfully")
+                .build());
 
     }
 }

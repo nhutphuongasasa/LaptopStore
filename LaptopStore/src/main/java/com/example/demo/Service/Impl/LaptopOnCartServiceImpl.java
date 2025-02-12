@@ -1,9 +1,11 @@
 package com.example.demo.Service.Impl;
 
 import com.example.demo.DTO.LaptopOnCartDTO;
+import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Models.Cart;
 import com.example.demo.Models.LaptopModel;
 import com.example.demo.Models.LaptopOnCart;
+import com.example.demo.Models.Sale;
 import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.LaptopOnCartRepository;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -63,7 +66,7 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
 
     // 3. Tạo mới LaptopOnCart
     @Override
-    public void createLaptopOnCart(LaptopOnCartDTO laptopOnCartDTO) {
+    public LaptopOnCartDTO createLaptopOnCart(LaptopOnCartDTO laptopOnCartDTO) {
         Cart cart = cartRepository.findById(laptopOnCartDTO.getCartId())
                 .orElseThrow(() -> new EntityNotFoundException("Cart not found!"));
 
@@ -76,12 +79,13 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
                 .quantity(laptopOnCartDTO.getQuantity())
                 .build();
 
-        laptopOnCartRepository.save(laptopOnCart);
+        LaptopOnCart laptopOnCartExisting = laptopOnCartRepository.save(laptopOnCart);
+        return convertToDTO(laptopOnCartExisting);
     }
 
     // 4. Cập nhật LaptopOnCart
     @Override
-    public void updateLaptopOnCart(UUID id, LaptopOnCartDTO laptopOnCartDTO) {
+    public LaptopOnCartDTO updateLaptopOnCart(UUID id, LaptopOnCartDTO laptopOnCartDTO) {
         LaptopOnCart laptopOnCart = laptopOnCartRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("LaptopOnCart with ID " + id + " not found!"));
 
@@ -95,7 +99,8 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
         laptopOnCart.setLaptopModel(laptopModel);
         laptopOnCart.setQuantity(laptopOnCartDTO.getQuantity());
 
-        laptopOnCartRepository.save(laptopOnCart);
+        LaptopOnCart laptopOnCartExisting = laptopOnCartRepository.save(laptopOnCart);
+        return convertToDTO(laptopOnCartExisting);
     }
 
     // 5. Xóa LaptopOnCart
@@ -105,5 +110,14 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
                 .orElseThrow(() -> new EntityNotFoundException("LaptopOnCart with ID " + id + " not found!"));
 
         laptopOnCartRepository.delete(laptopOnCart);
+    }
+
+    private LaptopOnCartDTO convertToDTO(LaptopOnCart laptopOnCart) {
+        return LaptopOnCartDTO.builder()
+                .id(laptopOnCart.getId())
+                .cartId(laptopOnCart.getCart().getId())
+                .laptopModelId(laptopOnCart.getLaptopModel().getId())
+                .quantity(laptopOnCart.getQuantity())
+                .build();
     }
 }

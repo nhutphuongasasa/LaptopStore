@@ -10,9 +10,9 @@ public interface PaymentMethodService {
 
     PaymentMethodDTO getPaymentMethodById(UUID id);
 
-    void createPaymentMethod(PaymentMethodDTO paymentMethodDTO);
+    PaymentMethodDTO createPaymentMethod(PaymentMethodDTO paymentMethodDTO);
 
-    void updatePaymentMethod(UUID id, PaymentMethodDTO paymentMethodDTO);
+    PaymentMethodDTO updatePaymentMethod(UUID id, PaymentMethodDTO paymentMethodDTO);
 
     void deletePaymentMethod(UUID id);
 }

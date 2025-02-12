@@ -107,7 +107,7 @@ public class OrderServiceImpl implements OrderService {
         existingOrder.setDateCreate(orderDTO.getDateCreate());
         //cap nhat danh sach orderdetail
         if (orderDTO.getOrderDetails() == null || orderDTO.getOrderDetails().isEmpty()) {
-            existingOrder.getOrderDetailList().clear();
+            existingOrder.getOrderDetailList().forEach(orderDetail -> orderDetail.setOrder(null));
         } else {
             List<OrderDetail> newOrderDetails = orderDTO.getOrderDetails().stream()
                     .map(orderDetailId -> orderDetailRepository.findById(orderDetailId)
@@ -124,7 +124,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (orderDTO.getPayments() == null || orderDTO.getPayments().isEmpty()) {
-            existingOrder.getPaymentList().clear();
+            existingOrder.getPaymentList().forEach(orderDetail -> orderDetail.setOrder(null));
         } else {
             List<Payment> newPayments = orderDTO.getPayments().stream()
                     .map(paymentId -> paymentRepository.findById(paymentId)
@@ -167,6 +167,7 @@ public class OrderServiceImpl implements OrderService {
                                 .map(OrderDetail::getId)
                                 .collect(Collectors.toList()))
                 .status(order.getStatus())
+                .dateCreate(order.getDateCreate())
                 .customerId(order.getCustomer().getId())
                 .build();
     }

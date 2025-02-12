@@ -11,9 +11,9 @@ public interface SaleService {
 
     SaleDTO getSaleById(UUID id);
 
-    void createSale(SaleDTO saleDTO);
+    SaleDTO createSale(SaleDTO saleDTO);
 
-    void updateSale(UUID saleId, SaleDTO saleDTO);
+    SaleDTO updateSale(UUID saleId, SaleDTO saleDTO);
 
     void deleteSale(UUID id);
 }

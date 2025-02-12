@@ -2,6 +2,7 @@ package com.example.demo.Service.Impl;
 
 import com.example.demo.Common.Enums;
 import com.example.demo.DTO.PaymentDTO;
+import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.PaymentService;
@@ -11,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -71,8 +73,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public void createPayment(PaymentDTO paymentDTO) {
-        System.out.println(paymentDTO.getCustomerId());
+    public PaymentDTO createPayment(PaymentDTO paymentDTO) {
         Customer customer = customerRepository.findById(paymentDTO.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found!"));
 
@@ -91,11 +92,13 @@ public class PaymentServiceImpl implements PaymentService {
                 .order(order)
                 .build();
 
-        paymentRepository.save(payment);
+        Payment paymentExisting = paymentRepository.save(payment);
+
+        return convertToDTO(paymentExisting);
     }
 
     @Override
-    public void updatePayment(UUID id, PaymentDTO paymentDTO) {
+    public PaymentDTO updatePayment(UUID id, PaymentDTO paymentDTO) {
         Payment existingPayment = paymentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found!"));
 
@@ -109,12 +112,16 @@ public class PaymentServiceImpl implements PaymentService {
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentDTO.getPaymentMethodId())
                 .orElseThrow(() -> new EntityNotFoundException("Payment Method not found!"));
-        existingPayment.setPaymentMethod(paymentMethod);
 
+        existingPayment.setCustomer(customer);
+        existingPayment.setOrder(order);
+        existingPayment.setPaymentMethod(paymentMethod);
         existingPayment.setType(paymentDTO.getType());
         existingPayment.setStatus(paymentDTO.getStatus());
 
-        paymentRepository.save(existingPayment);
+        Payment payment = paymentRepository.save(existingPayment);
+
+        return convertToDTO(payment);
     }
 
     @Override
@@ -123,5 +130,16 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found!"));
 
         paymentRepository.delete(existingPayment);
+    }
+
+    private PaymentDTO convertToDTO(Payment payment) {
+        return PaymentDTO.builder()
+                .id(payment.getId())
+                .customerId(payment.getCustomer() != null ? payment.getCustomer().getCustomerId().getId() : null)
+                .orderId(payment.getOrder() != null ? payment.getOrder().getId() : null)
+                .paymentMethodId(payment.getPaymentMethod() != null ? payment.getPaymentMethod().getId() : null)
+                .type(payment.getType())
+                .status(payment.getStatus())
+                .build();
     }
 }

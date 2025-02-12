@@ -10,9 +10,9 @@ public interface LaptopOnCartService {
 
     LaptopOnCartDTO getLaptopOnCartById(UUID id);
 
-    void createLaptopOnCart(LaptopOnCartDTO laptopOnCartDTO);
+    LaptopOnCartDTO createLaptopOnCart(LaptopOnCartDTO laptopOnCartDTO);
 
-    void updateLaptopOnCart(UUID id, LaptopOnCartDTO laptopOnCartDTO);
+    LaptopOnCartDTO updateLaptopOnCart(UUID id, LaptopOnCartDTO laptopOnCartDTO);
 
     void deleteLaptopOnCart(UUID id);
 }

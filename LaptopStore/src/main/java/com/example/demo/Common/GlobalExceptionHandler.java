@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -13,63 +15,75 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleEntityNotFoundException(EntityNotFoundException ex) {
+        ErrorMessage errorMessage = ErrorMessage.builder()
+                .success(false)
+                .statusCode(Enums.ErrorKey.ErrorInternal)
+                .timestamp(new java.sql.Timestamp(System.currentTimeMillis()))
+                .message(ex.getLocalizedMessage())
+                .data(null)
+                .build();
+
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage()));
+                .body(errorMessage);
     }
 
     @ExceptionHandler(EntityExistsException.class)
     public ResponseEntity<?> handleEntityExistsException(EntityExistsException ex) {
+        ErrorMessage errorMessage = ErrorMessage.builder()
+                .success(false)
+                .statusCode(Enums.ErrorKey.ErrorNoPermission)
+                .timestamp(new java.sql.Timestamp(System.currentTimeMillis()))
+                .message(ex.getLocalizedMessage())
+                .data(null)
+                .build();
+
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
-                .body(buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage()));
+                .body(errorMessage);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
+        ErrorMessage errorMessage = ErrorMessage.builder()
+                .success(false)
+                .statusCode(Enums.ErrorKey.ErrorNoPermission)
+                .timestamp(new java.sql.Timestamp(System.currentTimeMillis()))
+                .message(ex.getLocalizedMessage())
+                .data(null)
+                .build();
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage()));
+                .body(errorMessage);
+    }
+
+    @ExceptionHandler({NoHandlerFoundException.class})
+    public ResponseEntity<?> handleNoHandlerFoundException(NoHandlerFoundException ex) {
+        ErrorMessage errorMessage = ErrorMessage.builder()
+                .success(false)
+                .statusCode(Enums.ErrorKey.ErrorInternal)
+                .timestamp(new java.sql.Timestamp(System.currentTimeMillis()))
+                .message(ex.getLocalizedMessage())
+                .data(null)
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneralException(Exception ex) {
+        ErrorMessage errorMessage = ErrorMessage.builder()
+                .success(false)
+                .statusCode(Enums.ErrorKey.ErrorInternal)
+                .timestamp(new java.sql.Timestamp(System.currentTimeMillis()))
+                .message(ex.getLocalizedMessage())
+                .data(null)
+                .build();
+
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()));
+                .body(errorMessage);
     }
 
 
-
-    // Hàm để chuẩn hóa lỗi trả về (tạo format đẹp)
-    private ErrorResponse buildErrorResponse(HttpStatus status, String message) {
-        return new ErrorResponse(status.value(), message);
-    }
-
-    // Inner class dành cho format lỗi trả về
-    public static class ErrorResponse {
-        private int status;
-        private String message;
-
-        public ErrorResponse(int status, String message) {
-            this.status = status;
-            this.message = message;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public void setStatus(int status) {
-            this.status = status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
 }

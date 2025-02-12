@@ -3,7 +3,10 @@ package com.example.demo.Service.Impl;
 import com.example.demo.Common.Enums;
 import com.example.demo.Common.JsonConverter;
 import com.example.demo.DTO.PaymentMethodDTO;
+import com.example.demo.DTO.SaleDTO;
+import com.example.demo.Models.LaptopModel;
 import com.example.demo.Models.PaymentMethod;
+import com.example.demo.Models.Sale;
 import com.example.demo.Repository.PaymentMethodRepository;
 import com.example.demo.Service.PaymentMethodService;
 
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -64,7 +68,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
 
     // Tạo mới PaymentMethod
     @Override
-    public void createPaymentMethod(PaymentMethodDTO paymentMethodDTO) {
+    public PaymentMethodDTO createPaymentMethod(PaymentMethodDTO paymentMethodDTO) {
 
         PaymentMethod paymentMethod = PaymentMethod.builder()
                 .id(null)
@@ -72,12 +76,14 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
                 .type(paymentMethodDTO.getType())
                 .build();
 
-        paymentMethodRepository.save(paymentMethod);
+        PaymentMethod paymentMethodExisting = paymentMethodRepository.save(paymentMethod);
+
+        return convertToDTO(paymentMethodExisting);
     }
 
     // Cập nhật PaymentMethod
     @Override
-    public void updatePaymentMethod(UUID id, PaymentMethodDTO paymentMethodDTO) {
+    public PaymentMethodDTO updatePaymentMethod(UUID id, PaymentMethodDTO paymentMethodDTO) {
         PaymentMethod existingPaymentMethod = paymentMethodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("PaymentMethod with ID " + id + " not found!"));
 
@@ -86,7 +92,8 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
         existingPaymentMethod.setId(id);
         existingPaymentMethod.setType(Enums.PaymentType.valueOf(paymentMethodDTO.getType().name()));
 
-        paymentMethodRepository.save(existingPaymentMethod);
+        PaymentMethod paymentMethodExisting = paymentMethodRepository.save(existingPaymentMethod);
+        return convertToDTO(paymentMethodExisting);
     }
 
     // Xóa PaymentMethod theo ID
@@ -96,5 +103,13 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
                 .orElseThrow(() -> new RuntimeException("PaymentMethod with ID " + id + " not found!"));
         paymentMethod.getPaymentList().clear();
         paymentMethodRepository.delete(paymentMethod);
+    }
+
+    private PaymentMethodDTO convertToDTO(PaymentMethod paymentMethod) {
+        return PaymentMethodDTO.builder()
+                .id(paymentMethod.getId())
+                .type(paymentMethod.getType())
+                .data(paymentMethod.getData())
+                .build();
     }
 }

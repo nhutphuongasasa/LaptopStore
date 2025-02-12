@@ -1,6 +1,8 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
 import com.example.demo.DTO.PaymentDTO;
+import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Service.PaymentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,32 +23,48 @@ public class PaymentController {
 
     // 1. Get all payments
     @GetMapping
-    public ResponseEntity<List<PaymentDTO>> getAllPayments() {
-        List<PaymentDTO> payments = paymentService.getAllPayments();
-        return ResponseEntity.ok(payments); // HTTP 200: OK
+    public ResponseEntity<?> getAllPayments() {
+
+        return ResponseEntity.ok(DataResponse.<List<PaymentDTO>>builder()
+                .success(true)
+                .message("Payment retrieved successfully")
+                .data(paymentService.getAllPayments())
+                .build());
     }
 
     // 2. Get payment by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentById(@PathVariable UUID id) {
 
-            PaymentDTO payment = paymentService.getPaymentById(id);
-            return ResponseEntity.ok(payment);
+
+        return ResponseEntity.ok(DataResponse.<PaymentDTO>builder()
+                .success(true)
+                .message("Payment retrieved successfully")
+                .data(paymentService.getPaymentById(id))
+                .build());
 
     }
 
     // Create a new payment
     @PostMapping
     public ResponseEntity<?> createPayment(@RequestBody PaymentDTO paymentDTO) {
-            paymentService.createPayment(paymentDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Payment created successfully.");
+
+        return ResponseEntity.ok(DataResponse.<PaymentDTO>builder()
+                .success(true)
+                .message("Payment created successfully")
+                .data(paymentService.createPayment(paymentDTO))
+                .build());
     }
 
     // 4. Update payment by ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePayment(@PathVariable UUID id, @RequestBody PaymentDTO paymentDTO) {
-            paymentService.updatePayment(id, paymentDTO);
-            return ResponseEntity.ok("Payment updated successfully.");
+
+        return ResponseEntity.ok(DataResponse.<PaymentDTO>builder()
+                .success(true)
+                .message("Payment updated successfully")
+                .data(paymentService.updatePayment(id, paymentDTO))
+                .build());
 
     }
 
@@ -55,6 +73,9 @@ public class PaymentController {
     public ResponseEntity<?> deletePayment(@PathVariable UUID id) {
 
             paymentService.deletePayment(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(DataResponse.<PaymentDTO>builder()
+                .success(true)
+                .message("Payment updated successfully")
+                .build());
     }
 }

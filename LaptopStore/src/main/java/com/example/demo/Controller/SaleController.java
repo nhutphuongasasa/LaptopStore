@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Common.DataResponse;
+import com.example.demo.DTO.AddressDTO;
 import com.example.demo.DTO.SaleDTO;
 import com.example.demo.Service.SaleService;
 import org.springframework.http.HttpStatus;
@@ -21,22 +23,34 @@ public class SaleController {
     // Lấy danh sách tất cả Sale
     @GetMapping
     public ResponseEntity<?> getAllSales() {
-            List<SaleDTO> sales = saleService.getAllSales();
-            return ResponseEntity.ok(sales);
+
+        return ResponseEntity.ok(DataResponse.<List<SaleDTO>>builder()
+                .success(true)
+                .message("Sale retrieved successfully")
+                .data(saleService.getAllSales())
+                .build());
     }
 
     // Lấy Sale theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getSaleById(@PathVariable UUID id) {
-            SaleDTO saleDTO = saleService.getSaleById(id);
-            return ResponseEntity.ok(saleDTO);
+
+        return ResponseEntity.ok(DataResponse.<SaleDTO>builder()
+                .success(true)
+                .message("Sale retrieved successfully")
+                .data(saleService.getSaleById(id))
+                .build());
     }
 
     // Tạo mới một Sale
     @PostMapping
     public ResponseEntity<?> createSale(@RequestBody SaleDTO saleDTO) {
-            saleService.createSale(saleDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Sale created successfully.");
+
+        return ResponseEntity.ok(DataResponse.<SaleDTO>builder()
+                .success(true)
+                .message("Sale created successfully")
+                .data(saleService.createSale(saleDTO))
+                .build());
     }
 
 
@@ -44,13 +58,20 @@ public class SaleController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSale(@PathVariable UUID id) {
             saleService.deleteSale(id);
-            return ResponseEntity.ok("Sale deleted successfully!");
+        return ResponseEntity.ok(DataResponse.builder()
+                .success(true)
+                .message("Sale deleted successfully")
+                .build());
     }
 
     // Cập nhật Sale theo ID
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSale(@PathVariable UUID id, @RequestBody SaleDTO saleDTO) {
-            saleService.updateSale(id, saleDTO);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+
+        return ResponseEntity.ok(DataResponse.<SaleDTO>builder()
+                .success(true)
+                .message("Sale updated successfully")
+                .data(saleService.updateSale(id, saleDTO))
+                .build());
     }
 }

@@ -67,7 +67,7 @@ public class LaptopController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLaptop(@PathVariable UUID id) {
             laptopService.deleteLaptop(id);
-        return ResponseEntity.ok(DataResponse.<LaptopDTO>builder()
+        return ResponseEntity.ok(DataResponse.builder()
                 .success(true)
                 .message("Laptop deleted successfully")
                 .build());
