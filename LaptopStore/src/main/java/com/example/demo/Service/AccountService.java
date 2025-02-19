@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.example.demo.DTO.AccountDTO;
 
 public interface AccountService {
+    
     public AccountDTO partialUpdateAccount(UUID id,Map<String,Object> fieldsToUpdate );
     public List<AccountDTO> getAllAccounts();
     public AccountDTO getAccountById(UUID id);
