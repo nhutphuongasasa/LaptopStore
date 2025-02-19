@@ -6,6 +6,7 @@ import com.example.demo.DTO.LaptopModelDTO;
 import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.LaptopModelService;
+import com.example.demo.mapper.LaptopModelMapper;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EnumType;
@@ -15,11 +16,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
 public class LaptopModelServiceImpl implements LaptopModelService {
 
     private final LaptopModelRepository laptopModelRepository;
-    private final ModelMapper modelMapper;
     private final LaptopRepository laptopRepository;
     private final ImageRepository imageRepository;
     private final CommentRepository commentRepository;
@@ -35,9 +33,8 @@ public class LaptopModelServiceImpl implements LaptopModelService {
     private final OrderDetailRepository orderDetailRepository;
     private final SaleRepository saleRepository;
 
-    public LaptopModelServiceImpl(LaptopModelRepository laptopModelRepository,SaleRepository saleRepository, ModelMapper modelMapper,LaptopRepository laptopRepository, ImageRepository imageRepository, CommentRepository commentRepository, LaptopOnCartRepository laptopOnCartRepository, OrderDetailRepository orderDetailRepository) {
+    public LaptopModelServiceImpl(LaptopModelRepository laptopModelRepository,SaleRepository saleRepository,LaptopRepository laptopRepository, ImageRepository imageRepository, CommentRepository commentRepository, LaptopOnCartRepository laptopOnCartRepository, OrderDetailRepository orderDetailRepository) {
         this.laptopModelRepository = laptopModelRepository;
-        this.modelMapper = modelMapper;
         this.laptopRepository = laptopRepository;
         this.imageRepository = imageRepository;
         this.commentRepository = commentRepository;
@@ -51,7 +48,7 @@ public class LaptopModelServiceImpl implements LaptopModelService {
     @Override
     public List<LaptopModelDTO> getAllLaptopModels() {
         return laptopModelRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(LaptopModelMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -63,7 +60,7 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         LaptopModel laptopModel = laptopModelRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Laptop Model with ID " + id + " not found"));
 
-        return convertToDTO(laptopModel);
+        return LaptopModelMapper.convertToDTO(laptopModel);
     }
     @Transactional
     @Override
@@ -159,7 +156,7 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         // Lưu vào database
         LaptopModel laptopModelExisting = laptopModelRepository.save(laptopModel);
 
-        return convertToDTO(laptopModelExisting);
+        return LaptopModelMapper.convertToDTO(laptopModelExisting);
     }
 
     // 4. Cập nhật LaptopModel
@@ -172,7 +169,45 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         BeanUtils.copyProperties(laptopModelDTO, existingLaptopModel, "id");
 
         LaptopModel laptopModel = laptopModelRepository.save(existingLaptopModel);
-        return convertToDTO(laptopModel);
+        return LaptopModelMapper.convertToDTO(laptopModel);
+    }
+
+    @Override
+    public LaptopModelDTO partialUpdateLaptopModel(UUID id, Map<String, Object> fieldsToUpdate) {
+        LaptopModel laptopModel = laptopModelRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("LaptopModel with ID " + id + " not found!"));
+
+        Class<?> clazz = laptopModel.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    if (field.getType().isEnum()) {
+                        try {
+                            Object enumValue = Enum.valueOf((Class<Enum>) field.getType(), newValue.toString());
+                            field.set(laptopModel, enumValue);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid enum value for field: " + fieldName);
+                        }
+                    } else {
+                        field.set(laptopModel, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        LaptopModel updatedLaptopModel = laptopModelRepository.save(laptopModel);
+        return LaptopModelMapper.convertToDTO(updatedLaptopModel);
     }
 
     // 5. Xóa LaptopModel
@@ -192,69 +227,5 @@ public class LaptopModelServiceImpl implements LaptopModelService {
         laptopModelRepository.delete(laptopModel);
     }
 
-    private LaptopModelDTO convertToDTO(LaptopModel laptopModel) {
-        LaptopModelDTO laptopModelDTO = LaptopModelDTO.builder()
-                .id(laptopModel.getId())
-                .name(laptopModel.getName())
-                .branch(laptopModel.getBranch())
-                .cpu(laptopModel.getCpu())
-                .ram(laptopModel.getRam())
-                .storage(laptopModel.getStorage())
-                .display(laptopModel.getDisplay())
-                .color(laptopModel.getColor())
-                .price(laptopModel.getPrice())
-                .description(laptopModel.getDescription())
-                .build();
 
-        // Ánh xạ thủ công các danh sách liên quan (list ID), đảm bảo không bị null
-        laptopModelDTO.setLaptopIds(
-                Optional.ofNullable(laptopModel.getLaptopList())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(Laptop::getMacId)
-                        .collect(Collectors.toList())
-        );
-
-        laptopModelDTO.setImageIds(
-                Optional.ofNullable(laptopModel.getImageList())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(Image::getId)
-                        .collect(Collectors.toList())
-        );
-
-        laptopModelDTO.setCommentIds(
-                Optional.ofNullable(laptopModel.getCommentList())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(Comment::getId)
-                        .collect(Collectors.toList())
-        );
-
-        laptopModelDTO.setLaptopOnCartIds(
-                Optional.ofNullable(laptopModel.getLaptopOnCartList())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(LaptopOnCart::getId)
-                        .collect(Collectors.toList())
-        );
-
-        laptopModelDTO.setOrderDetailIds(
-                Optional.ofNullable(laptopModel.getOrderDetailList())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(OrderDetail::getId)
-                        .collect(Collectors.toList())
-        );
-
-        laptopModelDTO.setSaleIds(
-                Optional.ofNullable(laptopModel.getSaleList())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(Sale::getId)
-                        .collect(Collectors.toList())
-        );
-
-        return laptopModelDTO;
-    }
 }

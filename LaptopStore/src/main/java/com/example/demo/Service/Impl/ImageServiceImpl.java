@@ -7,12 +7,15 @@ import com.example.demo.Repository.ImageRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Service.ImageService;
 
+import com.example.demo.mapper.ImageMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 @Transactional
@@ -21,28 +24,17 @@ public class ImageServiceImpl implements ImageService {
 
     private final ImageRepository imageRepository;
     private final LaptopModelRepository laptopModelRepository;
-    private final ModelMapper modelMapper;
 
-    public ImageServiceImpl(ImageRepository imageRepository,
-                            LaptopModelRepository laptopModelRepository,
-                            ModelMapper modelMapper) {
+    public ImageServiceImpl(ImageRepository imageRepository, LaptopModelRepository laptopModelRepository) {
         this.imageRepository = imageRepository;
         this.laptopModelRepository = laptopModelRepository;
-        this.modelMapper = modelMapper;
     }
 
     // 1. Lấy danh sách tất cả Images
     @Override
     public List<ImageDTO> getAllImages() {
         return imageRepository.findAll().stream()
-                .map(image -> {
-                    ImageDTO imageDTO = modelMapper.map(image, ImageDTO.class);
-                    imageDTO.setLaptopModelIds(image.getLaptopModelList() != null ?
-                            image.getLaptopModelList().stream()
-                            .map(LaptopModel::getId)
-                            .collect(Collectors.toList()) : null);
-                    return imageDTO;
-                })
+                .map(ImageMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -51,12 +43,7 @@ public class ImageServiceImpl implements ImageService {
     public ImageDTO getImageById(UUID id) {
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Image not found with ID: " + id));
-        ImageDTO imageDTO = modelMapper.map(image, ImageDTO.class);
-        imageDTO.setLaptopModelIds(image.getLaptopModelList() != null ?
-                image.getLaptopModelList().stream()
-                .map(LaptopModel::getId)
-                .collect(Collectors.toList()) : null);
-        return imageDTO;
+        return ImageMapper.convertToDTO(image);
     }
 
     // 3. Tạo mới một Image
@@ -78,7 +65,7 @@ public class ImageServiceImpl implements ImageService {
         }
         Image imageExisting = imageRepository.save(image);
 
-        return convertToDTO(imageExisting);
+        return ImageMapper.convertToDTO(imageExisting);
     }
 
     @Override
@@ -99,7 +86,36 @@ public class ImageServiceImpl implements ImageService {
         }
 
         Image image = imageRepository.save(imageExisting);
-        return convertToDTO(image);
+        return ImageMapper.convertToDTO(image);
+    }
+
+    @Override
+    public ImageDTO partialUpdateImage(UUID id, Map<String, Object> fieldsToUpdate) {
+        Image image = imageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Image with ID " + id + " not found!"));
+
+        Class<?> clazz = image.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    field.set(image, newValue);
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Image updatedImage = imageRepository.save(image);
+        return ImageMapper.convertToDTO(updatedImage);
     }
 
     // 5. Xóa Image theo ID
@@ -113,14 +129,5 @@ public class ImageServiceImpl implements ImageService {
         imageRepository.delete(image);
     }
 
-    private ImageDTO convertToDTO(Image image) {
-        return ImageDTO.builder()
-                .id(image.getId())
-                .laptopModelIds(image.getLaptopModelList() == null ? null
-                        : image.getLaptopModelList().stream()
-                        .map(LaptopModel::getId)
-                        .collect(Collectors.toList()))
-                .imageUrl(image.getImageUrl())
-                .build();
-    }
+
 }

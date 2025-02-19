@@ -10,10 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/images") // Định nghĩa URL cơ bản cho các API liên quan đến Image
+@RequestMapping("/api/v1/images") // Định nghĩa URL cơ bản cho các API liên quan đến Image
 public class ImageController {
 
     private final ImageService imageService;
@@ -62,6 +63,16 @@ public class ImageController {
                 .data(imageService.updateImage(id,imageDTO))
                 .build());
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateImage(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<ImageDTO>builder()
+                .success(true)
+                .message("Image updated successfully")
+                .data(imageService.partialUpdateImage(id, fieldsToUpdate))
+                .build());
+    }
+
 
     // 5. Xóa Image theo ID
     @DeleteMapping("/{id}")

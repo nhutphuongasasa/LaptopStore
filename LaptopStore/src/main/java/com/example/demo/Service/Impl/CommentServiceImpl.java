@@ -8,12 +8,15 @@ import com.example.demo.Repository.CommentRepository;
 import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Service.CommentService;
+import com.example.demo.mapper.CommentMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,15 +38,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<CommentDTO> getAllCommentsByAccountId(UUID accountId) {
         return commentRepository.findByAccountId(accountId).stream()
-                .map(comment -> CommentDTO.builder()
-                        .id(comment.getId())
-                        .parentId(comment.getParent() == null ? null : comment.getParent().getId())
-                        .body(comment.getBody())
-                        .accountId(comment.getAccount().getId())
-                        .laptopModelId(comment.getLaptopModel() == null ? null : comment.getLaptopModel().getId())
-                        .replies(comment.getReplies() == null ? Collections.emptyList()
-                                : comment.getReplies().stream().map(Comment :: getId).collect(Collectors.toList()))
-                        .build())
+                .map(CommentMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -54,15 +49,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
 
-        return CommentDTO.builder()
-                .id(comment.getId())
-                .parentId(comment.getParent() == null ? null : comment.getParent().getId())
-                .body(comment.getBody())
-                .accountId(comment.getAccount().getId())
-                .laptopModelId(comment.getLaptopModel() == null ? null : comment.getLaptopModel().getId())
-                .replies(comment.getReplies() == null ? Collections.emptyList()
-                        : comment.getReplies().stream().map(Comment :: getId).collect(Collectors.toList()))
-                .build();
+        return CommentMapper.convertToDTO(comment);
     }
 
     // 3. Tạo một Comment mới
@@ -95,7 +82,7 @@ public class CommentServiceImpl implements CommentService {
 
         Comment commentExisting = commentRepository.save(comment);
 
-        return convertToDTO(commentExisting);
+        return CommentMapper.convertToDTO(commentExisting);
     }
 
     // 4. Cập nhật một Comment
@@ -139,7 +126,36 @@ public class CommentServiceImpl implements CommentService {
 
         Comment commentExisting = commentRepository.save(comment);
 
-        return convertToDTO(commentExisting);
+        return CommentMapper.convertToDTO(commentExisting);
+    }
+
+    @Override
+    public CommentDTO partialUpdateComment(UUID id, Map<String, Object> fieldsToUpdate) {
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Comment with ID " + id + " not found!"));
+
+        Class<?> clazz = comment.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    field.set(comment, newValue);
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Comment updatedComment = commentRepository.save(comment);
+        return CommentMapper.convertToDTO(updatedComment);
     }
 
     // 5. Xóa Comment theo ID
@@ -152,17 +168,5 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.delete(commentExisting);
     }
 
-    private CommentDTO convertToDTO(Comment comment) {
-        return CommentDTO.builder()
-                .id(comment.getId())
-                .accountId(comment.getAccount().getId())
-                .parentId(comment.getParent() == null ? null : comment.getParent().getId())
-                .body(comment.getBody())
-                .laptopModelId(comment.getLaptopModel().getId())
-                .replies(comment.getReplies() == null ? null :
-                        comment.getReplies().stream()
-                        .map(Comment :: getId)
-                        .collect(Collectors.toList()))
-                .build();
-    }
+
 }

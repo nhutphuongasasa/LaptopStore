@@ -9,14 +9,13 @@ import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.CustomerRepository;
 import com.example.demo.Repository.LaptopOnCartRepository;
 import com.example.demo.Service.CartService;
+import com.example.demo.mapper.CartMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.lang.reflect.Field;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,14 +37,7 @@ public class CartServiceImpl implements CartService {
     public List<CartDTO> getAllCarts() {
 
         return cartRepository.findAll().stream()
-                .map(cart -> CartDTO.builder()
-                        .id(cart.getId())
-                        .customerId(cart.getCustomer().getCustomerId().getId())
-                        .laptopOnCartIds(cart.getLaptopOnCarts() != null
-                                ? cart.getLaptopOnCarts().stream().map(LaptopOnCart::getId).collect(Collectors.toList())
-                                : null
-                        )
-                        .build())
+                .map(CartMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -55,13 +47,7 @@ public class CartServiceImpl implements CartService {
         Cart cart = cartRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cart with ID " + id + " not found!"));
 
-        return CartDTO.builder()
-                .id(cart.getId())
-                .customerId(cart.getCustomer().getCustomerId().getId())
-                .laptopOnCartIds(cart.getLaptopOnCarts() != null
-                        ? cart.getLaptopOnCarts().stream().map(LaptopOnCart::getId).collect(Collectors.toList())
-                        : null)
-                .build();
+        return CartMapper.convertToDTO(cart);
     }
 
     // Tạo mới Cart
@@ -75,7 +61,7 @@ public class CartServiceImpl implements CartService {
                 .build();
         Cart cartExisting = cartRepository.save(cart);
 
-        return convertToDTO(cartExisting);
+        return CartMapper.convertToDTO(cartExisting);
     }
 
     // Cập nhật Cart theo ID
@@ -101,7 +87,35 @@ public class CartServiceImpl implements CartService {
         cart.getLaptopOnCarts().addAll(laptopOnCarts);
 
         Cart cartExisting = cartRepository.save(cart);
-        return convertToDTO(cartExisting);
+        return CartMapper.convertToDTO(cartExisting);
+    }
+
+    public CartDTO partialUpdateCart(UUID id, Map<String, Object> fieldsToUpdate) {
+        Cart cart = cartRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cart with ID " + id + " not found!"));
+
+        Class<?> clazz = cart.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    field.set(cart, newValue);
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Cart updatedCart = cartRepository.save(cart);
+        return CartMapper.convertToDTO(updatedCart);
     }
 
 
@@ -116,16 +130,5 @@ public class CartServiceImpl implements CartService {
         cartRepository.delete(cart);
     }
 
-    private CartDTO convertToDTO(Cart cart) {
-        return CartDTO.builder()
-                .id(cart.getId())
-                .customerId(cart.getCustomer().getId())
-                .laptopOnCartIds(Optional.ofNullable(cart.getLaptopOnCarts())
-                        .orElse(Collections.emptyList())
-                        .stream()
-                        .map(LaptopOnCart::getId)
-                        .collect(Collectors.toList()))
-                .build();
 
-    }
 }

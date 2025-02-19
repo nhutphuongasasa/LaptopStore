@@ -12,6 +12,7 @@ import com.example.demo.Repository.CustomerRepository;
 import com.example.demo.Service.AccountService;
 
 
+import com.example.demo.mapper.AccountMapper;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -19,7 +20,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,17 +32,8 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
 
-    private final ModelMapper modelMapper;
-
-    private final AdminRepository adminRepository;
-
-    private final CustomerRepository customerRepository;
-
-    public AccountServiceImpl(AccountRepository accountRepository, ModelMapper modelMapper,AdminRepository adminRepository,CustomerRepository customerRepository) {
+    public AccountServiceImpl(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
-        this.modelMapper = modelMapper;
-        this.adminRepository = adminRepository;
-        this.customerRepository = customerRepository;
     }
 
     // Lấy danh sách tài khoản
@@ -47,13 +41,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public List<AccountDTO> getAllAccounts() {
         return accountRepository.findAll().stream()
-            .map(account -> AccountDTO.builder()
-                    .id(account.getId())
-                    .name(account.getName())
-                    .email(account.getEmail())
-                    .password(account.getPassword())
-                    .role(account.getRole())
-                    .build())
+            .map(AccountMapper::convertToDTO)
             .collect(Collectors.toList());
     }
 
@@ -63,13 +51,7 @@ public class AccountServiceImpl implements AccountService {
     public AccountDTO getAccountById(UUID id) {
         Account account = accountRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-        return AccountDTO.builder()
-                .id(account.getId())
-                .name(account.getName())
-                .email(account.getEmail())
-                .password(account.getPassword())
-                .role(account.getRole())
-                .build();
+        return AccountMapper.convertToDTO(account);
     }
     // Tạo mới tài khoản
     @Transactional
@@ -100,7 +82,7 @@ public class AccountServiceImpl implements AccountService {
 
         Account accountExisting = accountRepository.save(account);
 
-        return convertToDTO(accountExisting);
+        return AccountMapper.convertToDTO(accountExisting);
     }
 
 
@@ -126,8 +108,48 @@ public class AccountServiceImpl implements AccountService {
 
         Account account = accountRepository.save(existingAccount);
 
-        return convertToDTO(account);
+        return AccountMapper.convertToDTO(account);
     }
+
+    @Override
+    public AccountDTO partialUpdateAccount(UUID id, Map<String, Object> fieldsToUpdate) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Account with ID " + id + " not found!"));
+
+        Class<?> clazz = account.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+
+                    if (field.getType().isEnum()) {
+                        try {
+                            Object enumValue = Enum.valueOf((Class<Enum>) field.getType(), newValue.toString());
+                            field.set(account, enumValue);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid enum value for field: " + fieldName);
+                        }
+                    } else {
+                        field.set(account, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException ("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Account updatedAccount = accountRepository.save(account);
+        return AccountMapper.convertToDTO(updatedAccount);
+    }
+
 
     // Xóa tài khoản
     @Transactional
@@ -139,14 +161,4 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.deleteById(id);
     }
 
-
-    private AccountDTO convertToDTO(Account account) {
-        return AccountDTO.builder()
-                .id(account.getId())
-                .email(account.getEmail())
-                .password(account.getPassword())
-                .name(account.getName())
-                .role(account.getRole())
-                .build();
-    }
 }

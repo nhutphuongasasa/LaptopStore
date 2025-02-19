@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/sales") // Base URL cho Sale
+@RequestMapping("/api/v1/sales") // Base URL cho Sale
 public class SaleController {
     private final SaleService saleService;
 
@@ -61,6 +62,15 @@ public class SaleController {
         return ResponseEntity.ok(DataResponse.builder()
                 .success(true)
                 .message("Sale deleted successfully")
+                .build());
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateSale(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<SaleDTO>builder()
+                .success(true)
+                .message("Sale updated successfully")
+                .data(saleService.partialUpdateSale(id, fieldsToUpdate))
                 .build());
     }
 

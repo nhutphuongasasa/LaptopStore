@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/comments")
+@RequestMapping("/api/v1/comments")
 public class CommentController {
 
     private final CommentService commentService;
@@ -60,6 +61,15 @@ public class CommentController {
                 .success(true)
                 .message("Comment updated successfully")
                 .data(commentService.updateComment(id,commentDTO))
+                .build());
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateComment(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<CommentDTO>builder()
+                .success(true)
+                .message("Comment updated successfully")
+                .data(commentService.partialUpdateComment(id, fieldsToUpdate))
                 .build());
     }
 
