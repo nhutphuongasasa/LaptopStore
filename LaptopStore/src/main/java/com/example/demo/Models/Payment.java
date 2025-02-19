@@ -21,15 +21,15 @@ public class Payment {
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "customer_id",nullable = false)
     private Customer customer;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "order_id",nullable = false)
     private Order order;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "payment_method_id",nullable = false)
     private PaymentMethod paymentMethod;
 

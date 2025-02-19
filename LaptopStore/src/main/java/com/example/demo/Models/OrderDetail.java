@@ -13,18 +13,18 @@ import java.util.UUID;
 @Setter
 @Builder
 @Entity
-@Table(name="customer")
+@Table(name="order_detail")
 public class OrderDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "oder_id")
     private Order order;
 
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "laptop_model_id",nullable = false)
     private LaptopModel laptopModel;
 

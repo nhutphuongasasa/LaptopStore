@@ -24,4 +24,8 @@ public class Enums {
     public enum Color{
         Red,Blue,Green,Black,White,Silver,Gold
     }
+
+    public enum ErrorKey {
+        ErrorInternal, ErrorWrongCreds, ErrorNoPermission
+    }
 }

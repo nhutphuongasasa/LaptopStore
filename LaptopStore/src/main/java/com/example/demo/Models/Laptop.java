@@ -21,16 +21,18 @@ public class Laptop {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "BINARY(16)",name = "mac_id")
-    private UUID id;
+    private UUID macId;
 
     @Column(nullable = false)
     private Date MFG;
 
-    @ManyToOne
-    @JoinColumn(name = "model_id",nullable = false)
+    @ManyToOne(cascade = { CascadeType.MERGE,CascadeType.PERSIST})
+    @JoinColumn(name = "model_id")
     private LaptopModel laptopModel;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Enums.laptopStatus status;
+
+
 }

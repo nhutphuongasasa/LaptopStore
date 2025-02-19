@@ -2,11 +2,14 @@ package com.example.demo.Models;
 
 import com.example.demo.Common.Enums;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
 import java.util.UUID;
+
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,22 +36,35 @@ public class Account {
     @Column(nullable = false,columnDefinition = "VARCHAR(255) DEFAULT 'CUSTOMER'")
     private Enums.role role;
 
-    @OneToOne(mappedBy = "customerId")
+    @OneToOne(mappedBy = "customerId",cascade = CascadeType.ALL)
+//    @JsonIgnore
     private Customer customerId;
 
-    @OneToOne(mappedBy = "adminId")
+    @OneToOne(mappedBy = "adminId",cascade = CascadeType.ALL)
+//    @JsonIgnore
     private Admin adminId;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "account",cascade = {CascadeType.PERSIST,
+                                                CascadeType.DETACH,
+                                                CascadeType.MERGE,
+                                                CascadeType.REFRESH})
     private List<Comment> commentList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "senderId")
-    private List<Chat> chatSender;
+    @OneToMany(mappedBy = "senderId",cascade = {CascadeType.PERSIST,
+                                                CascadeType.DETACH,
+                                                CascadeType.MERGE,
+                                                CascadeType.REFRESH})
+    private List<Chat> chatSend;
+
 
     @JsonIgnore
-    @OneToMany(mappedBy = "receiverId")
-    private List<Chat> chatReceiver;
+    @OneToMany(mappedBy = "receiverId",cascade = {CascadeType.PERSIST,
+                                                CascadeType.DETACH,
+                                                CascadeType.MERGE,
+                                                CascadeType.REFRESH})
+    private List<Chat> chatReceive;
+
 
 }

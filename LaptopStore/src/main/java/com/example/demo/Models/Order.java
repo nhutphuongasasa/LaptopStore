@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +24,7 @@ public class Order {
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "customer_id",nullable = false)
     private Customer customer;
 
@@ -32,14 +33,20 @@ public class Order {
     private Enums.OrderStatus status = Enums.OrderStatus.Pending;
 
     @Column(name = "date_create", nullable = false)
-    private Date dateCreate;
+    private LocalDateTime dateCreate;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order",cascade = {CascadeType.PERSIST,
+                                            CascadeType.DETACH,
+                                            CascadeType.MERGE,
+                                            CascadeType.REFRESH})
     private List<OrderDetail> orderDetailList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order",cascade = {CascadeType.PERSIST,
+                                            CascadeType.DETACH,
+                                            CascadeType.MERGE,
+                                            CascadeType.REFRESH})
     private List<Payment> paymentList;
 
 }

@@ -21,12 +21,7 @@ public class Comment {
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne(cascade = {
-            CascadeType.DETACH,
-            CascadeType.MERGE,
-            CascadeType.PERSIST,
-            CascadeType.REFRESH
-    })
+    @ManyToOne
     @JoinColumn(name = "account_id",nullable = false)
     private Account account;
 
@@ -44,4 +39,5 @@ public class Comment {
     @ManyToOne
     @JoinColumn(name = "laptop_model_id")
     private LaptopModel laptopModel;
+
 }

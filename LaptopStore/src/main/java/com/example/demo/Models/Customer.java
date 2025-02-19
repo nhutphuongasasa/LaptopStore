@@ -7,9 +7,10 @@ import lombok.*;
 
 
 import java.util.List;
+import java.util.UUID;
 
-// @AllArgsConstructor
-// @NoArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Builder
@@ -17,23 +18,46 @@ import java.util.List;
 @Table(name="customer")
 public class Customer {
     @Id
-    @OneToOne
-    @JoinColumn(name = "account_id")
+//    @GeneratedValue(strategy = GenerationType.UUID)
+//    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
+
+    @MapsId
+    @OneToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
+    @JoinColumn(name = "id")
     private Account customerId;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "customer")
+    @OneToMany(mappedBy = "customer",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Address> addressList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "customer")
+    @OneToMany(mappedBy = "customer",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Payment> paymentList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "customer")
+    @OneToMany(mappedBy = "customer",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Order> oderList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "customer")
+    @OneToMany(mappedBy = "customer",cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     private List<Cart> cartList;
+
+    @Override
+    public String toString() {
+        return "Customer{id=" + id + "}";
+    }
+
 }

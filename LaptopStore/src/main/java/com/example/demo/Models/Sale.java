@@ -31,11 +31,14 @@ public class Sale {
     @Column(nullable = false)
     private Float discount;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST,
+            CascadeType.DETACH,
+            CascadeType.MERGE,
+            CascadeType.REFRESH})
     @JoinTable(
             name = "laptop_on_sale",
             joinColumns = @JoinColumn(name = "sale_id", nullable = false),
-            inverseJoinColumns = @JoinColumn(name = "laptop_model_id", nullable = false)
+            inverseJoinColumns = @JoinColumn(name = "laptop_model_id")
     )
     private List<LaptopModel> laptopModelList;
 

@@ -14,18 +14,21 @@ import java.util.UUID;
 @Setter
 @Builder
 @Entity
-@Table(name="admin")
+@Table(name="cart")
 public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "cart")
+    @OneToMany(mappedBy = "cart",cascade = {CascadeType.PERSIST,
+                                            CascadeType.DETACH,
+                                            CascadeType.MERGE,
+                                            CascadeType.REFRESH},orphanRemoval = true)
     private List<LaptopOnCart> laptopOnCarts;
 }
