@@ -10,13 +10,16 @@ import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.LaptopOnCartRepository;
 import com.example.demo.Service.LaptopOnCartService;
+import com.example.demo.mapper.LaptopOnCartMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,12 +44,7 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
     @Override
     public List<LaptopOnCartDTO> getAllLaptopOnCarts() {
         return laptopOnCartRepository.findAll().stream()
-                .map(laptopOnCart -> LaptopOnCartDTO.builder()
-                        .id(laptopOnCart.getId())
-                        .cartId(laptopOnCart.getCart().getId())
-                        .laptopModelId(laptopOnCart.getLaptopModel().getId())
-                        .quantity(laptopOnCart.getQuantity())
-                        .build())
+                .map(LaptopOnCartMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -56,12 +54,7 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
         LaptopOnCart laptopOnCart = laptopOnCartRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("LaptopOnCart with ID " + id + " not found!"));
 
-        return LaptopOnCartDTO.builder()
-                .id(laptopOnCart.getId())
-                .cartId(laptopOnCart.getCart().getId())
-                .laptopModelId(laptopOnCart.getLaptopModel().getId())
-                .quantity(laptopOnCart.getQuantity())
-                .build();
+        return LaptopOnCartMapper.convertToDTO(laptopOnCart);
     }
 
     // 3. Tạo mới LaptopOnCart
@@ -80,7 +73,7 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
                 .build();
 
         LaptopOnCart laptopOnCartExisting = laptopOnCartRepository.save(laptopOnCart);
-        return convertToDTO(laptopOnCartExisting);
+        return LaptopOnCartMapper.convertToDTO(laptopOnCartExisting);
     }
 
     // 4. Cập nhật LaptopOnCart
@@ -100,7 +93,37 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
         laptopOnCart.setQuantity(laptopOnCartDTO.getQuantity());
 
         LaptopOnCart laptopOnCartExisting = laptopOnCartRepository.save(laptopOnCart);
-        return convertToDTO(laptopOnCartExisting);
+
+        return LaptopOnCartMapper.convertToDTO(laptopOnCartExisting);
+    }
+
+    @Override
+    public LaptopOnCartDTO partialUpdateLaptopOnCart(UUID id, Map<String, Object> fieldsToUpdate) {
+        LaptopOnCart laptopOnCart = laptopOnCartRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("LaptopOnCart with ID " + id + " not found!"));
+
+        Class<?> clazz = laptopOnCart.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    field.set(laptopOnCart, newValue);
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        LaptopOnCart updatedLaptopOnCart = laptopOnCartRepository.save(laptopOnCart);
+        return LaptopOnCartMapper.convertToDTO(updatedLaptopOnCart);
     }
 
     // 5. Xóa LaptopOnCart
@@ -112,12 +135,5 @@ public class LaptopOnCartServiceImpl implements LaptopOnCartService {
         laptopOnCartRepository.delete(laptopOnCart);
     }
 
-    private LaptopOnCartDTO convertToDTO(LaptopOnCart laptopOnCart) {
-        return LaptopOnCartDTO.builder()
-                .id(laptopOnCart.getId())
-                .cartId(laptopOnCart.getCart().getId())
-                .laptopModelId(laptopOnCart.getLaptopModel().getId())
-                .quantity(laptopOnCart.getQuantity())
-                .build();
-    }
+
 }

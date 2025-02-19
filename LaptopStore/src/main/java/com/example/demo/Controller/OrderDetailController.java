@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/order-details")
+@RequestMapping("/api/v1/order-details")
 public class OrderDetailController {
 
     private final OrderDetailService orderDetailService;
@@ -61,6 +62,15 @@ public class OrderDetailController {
                 .success(true)
                 .message("OrderDetail updated successfully")
                 .data(orderDetailService.updateOrderDetail(id, orderDetailDTO))
+                .build());
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateOrderDetail(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<OrderDetailDTO>builder()
+                .success(true)
+                .message("OrderDetail updated successfully")
+                .data(orderDetailService.partialUpdateOrderDetail(id, fieldsToUpdate))
                 .build());
     }
 

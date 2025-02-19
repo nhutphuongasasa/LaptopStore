@@ -11,12 +11,16 @@ import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.OrderDetailRepository;
 import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Service.OrderDetailService;
+import com.example.demo.mapper.OrderDetailMapper;
 import jakarta.persistence.EntityNotFoundException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -39,13 +43,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
     @Override
     public List<OrderDetailDTO> getAllOrderDetails() {
         return orderDetailRepository.findAll().stream()
-                .map(orderDetail -> OrderDetailDTO.builder()
-                        .id(orderDetail.getId())
-                        .orderId(orderDetail.getOrder() == null ? null : orderDetail.getOrder().getId())
-                        .laptopModelId(orderDetail.getLaptopModel().getId())
-                        .quantity(orderDetail.getQuantity())
-                        .price(orderDetail.getPrice())
-                        .build())
+                .map(OrderDetailMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -55,13 +53,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         OrderDetail orderDetail = orderDetailRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("OrderDetail not found"));
 
-        return OrderDetailDTO.builder()
-                .id(orderDetail.getId())
-                .orderId(orderDetail.getOrder() == null ? null : orderDetail.getOrder().getId())
-                .laptopModelId(orderDetail.getLaptopModel().getId())
-                .quantity(orderDetail.getQuantity())
-                .price(orderDetail.getPrice())
-            .build();
+        return OrderDetailMapper.convertToDTO(orderDetail);
     }
 
     @Transactional
@@ -83,7 +75,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
 
         OrderDetail orderDetailExisting = orderDetailRepository.save(orderDetail);
 
-        return convertToDTO(orderDetailExisting);
+        return OrderDetailMapper.convertToDTO(orderDetailExisting);
     }
 
     @Transactional
@@ -105,7 +97,42 @@ public class OrderDetailServiceImpl implements OrderDetailService {
 
         OrderDetail orderDetailExisting = orderDetailRepository.save(existingOrderDetail);
 
-        return  convertToDTO(orderDetailExisting);
+        return OrderDetailMapper.convertToDTO(orderDetailExisting);
+    }
+
+    @Transactional
+    @Override
+    public OrderDetailDTO partialUpdateOrderDetail(UUID id, Map<String, Object> fieldsToUpdate) {
+        OrderDetail orderDetail = orderDetailRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("OrderDetail with ID " + id + " not found!"));
+
+        Class<?> clazz = orderDetail.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null ) {
+                    if (field.getType().equals(BigDecimal.class)) {
+                        field.set(orderDetail, new BigDecimal(newValue.toString()));
+                    } else if (field.getType().equals(Integer.class)) {
+                        field.set(orderDetail, Integer.parseInt(newValue.toString()));
+                    } else {
+                        field.set(orderDetail, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+        OrderDetail updatedOrderDetail = orderDetailRepository.save(orderDetail);
+        return OrderDetailMapper.convertToDTO(updatedOrderDetail);
     }
 
     @Transactional
@@ -117,13 +144,5 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         orderDetailRepository.delete(existingOrderDetail);
     }
 
-    private OrderDetailDTO convertToDTO(OrderDetail orderDetail) {
-        return OrderDetailDTO.builder()
-                .id(orderDetail.getId())
-                .orderId(orderDetail.getId())
-                .laptopModelId(orderDetail.getLaptopModel().getId())
-                .quantity(orderDetail.getQuantity())
-                .price(orderDetail.getPrice())
-                .build();
-    }
+
 }

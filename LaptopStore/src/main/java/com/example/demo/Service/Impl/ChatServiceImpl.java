@@ -10,16 +10,15 @@ import com.example.demo.Models.LaptopOnCart;
 import com.example.demo.Repository.AccountRepository;
 import com.example.demo.Repository.ChatRepository;
 import com.example.demo.Service.ChatService;
+import com.example.demo.mapper.ChatMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -27,12 +26,11 @@ import java.util.stream.Collectors;
 public class ChatServiceImpl implements ChatService {
     private final ChatRepository chatRepository;
     private final AccountRepository accountRepository;
-    private final ModelMapper modelMapper;
 
-    public ChatServiceImpl(ChatRepository chatRepository, AccountRepository accountRepository, ModelMapper modelMapper) {
+    public ChatServiceImpl(ChatRepository chatRepository, AccountRepository accountRepository  ) {
         this.chatRepository = chatRepository;
         this.accountRepository = accountRepository;
-        this.modelMapper = modelMapper;
+
     }
 
     @Transactional
@@ -41,23 +39,11 @@ public class ChatServiceImpl implements ChatService {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
         List<ChatDTO> chatDTOList = chatRepository.findBySenderId(account).stream()
-                .map(chat -> ChatDTO.builder()
-                        .id(chat.getId())
-                        .senderId(chat.getSenderId().getId())
-                        .receiverId(chat.getReceiverId().getId())
-                        .message(chat.getMessage())
-                        .createAt(chat.getCreateAt())
-                        .build())
+                .map(ChatMapper::convertToDTO)
                 .collect(Collectors.toList());
 
         chatRepository.findByReceiverId(account).stream()
-                .map(chat -> ChatDTO.builder()
-                        .id(chat.getId())
-                        .senderId(chat.getSenderId().getId())
-                        .receiverId(chat.getReceiverId().getId())
-                        .message(chat.getMessage())
-                        .createAt(chat.getCreateAt())
-                        .build())
+                .map(ChatMapper::convertToDTO)
                 .forEach(chatDTOList::add);
 
         return chatDTOList;
@@ -68,13 +54,7 @@ public class ChatServiceImpl implements ChatService {
     public ChatDTO getChatById(UUID id) {
         Chat chat = chatRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Chat not found with ID: " + id));
-        return ChatDTO.builder()
-                .id(chat.getId())
-                .senderId(chat.getSenderId().getId())
-                .receiverId(chat.getReceiverId().getId())
-                .message(chat.getMessage())
-                .createAt(chat.getCreateAt())
-                .build();
+        return ChatMapper.convertToDTO(chat);
     }
 
     @Transactional
@@ -100,7 +80,7 @@ public class ChatServiceImpl implements ChatService {
         accountRepository.save(sender);
         accountRepository.save(receiver);
 
-        return convertToDTO(chatExisting);
+        return ChatMapper.convertToDTO(chatExisting);
     }
 
     @Transactional
@@ -120,7 +100,36 @@ public class ChatServiceImpl implements ChatService {
 
         chatRepository.save(chat);
 
-        return convertToDTO(chat);
+        return ChatMapper.convertToDTO(chat);
+    }
+
+    @Override
+    public ChatDTO partialUpdateChat(UUID id, Map<String, Object> fieldsToUpdate) {
+        Chat chat = chatRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Chat with ID " + id + " not found!"));
+
+        Class<?> clazz = chat.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    field.set(chat, newValue);
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Chat updatedChat = chatRepository.save(chat);
+        return ChatMapper.convertToDTO(updatedChat);
     }
 
     @Transactional
@@ -138,14 +147,5 @@ public class ChatServiceImpl implements ChatService {
         chatRepository.delete(chat);
     }
 
-    private ChatDTO convertToDTO(Chat chat) {
-        return ChatDTO.builder()
-                .id(chat.getId())
-                .message(chat.getMessage())
-                .createAt(chat.getCreateAt())
-                .receiverId(chat.getReceiverId().getId())
-                .senderId(chat.getSenderId().getId())
-                .build();
 
-    }
 }

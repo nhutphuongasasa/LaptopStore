@@ -9,13 +9,16 @@ import com.example.demo.Repository.LaptopRepository;
 import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Service.LaptopService;
 
+import com.example.demo.mapper.LaptopMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,12 +39,7 @@ public class LaptopServiceImpl implements LaptopService {
     @Override
     public List<LaptopDTO> getAllLaptops() {
         return laptopRepository.findAll().stream()
-                .map(laptop -> LaptopDTO.builder()
-                        .macId(laptop.getMacId())
-                        .mfg(laptop.getMFG())
-                        .status(laptop.getStatus())
-                        .laptopModelId(laptop.getLaptopModel() != null ? laptop.getLaptopModel().getId() : null)
-                        .build())
+                .map(LaptopMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -51,12 +49,7 @@ public class LaptopServiceImpl implements LaptopService {
     public LaptopDTO getLaptopById(UUID id) {
         Laptop laptop = laptopRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Laptop not found!"));
-        return LaptopDTO.builder()
-                .macId(laptop.getMacId())
-                .mfg(laptop.getMFG())
-                .status(laptop.getStatus())
-                .laptopModelId(laptop.getLaptopModel().getId() != null ? laptop.getLaptopModel().getId() : null)
-                .build();
+        return LaptopMapper.convertToDTO(laptop);
     }
 
     // **3. Tạo mới Laptop**
@@ -80,7 +73,7 @@ public class LaptopServiceImpl implements LaptopService {
 
         Laptop laptopExisting = laptopRepository.save(laptop);
 
-        return convertToDTO(laptopExisting);
+        return LaptopMapper.convertToDTO(laptopExisting);
     }
 
     // **4. Cập nhật Laptop**
@@ -105,7 +98,45 @@ public class LaptopServiceImpl implements LaptopService {
         existingLaptop.setStatus(updatedLaptopDTO.getStatus());
 
         Laptop laptopExisting = laptopRepository.save(existingLaptop);
-        return convertToDTO(laptopExisting);
+        return LaptopMapper.convertToDTO(laptopExisting);
+    }
+
+    @Override
+    public LaptopDTO partialUpdateLaptop(UUID id, Map<String, Object> fieldsToUpdate) {
+        Laptop laptop = laptopRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Laptop with ID " + id + " not found!"));
+
+        Class<?> clazz = laptop.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    if (field.getType().isEnum()) {
+                        try {
+                            Object enumValue = Enum.valueOf((Class<Enum>) field.getType(), newValue.toString());
+                            field.set(laptop, enumValue);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid enum value for field: " + fieldName);
+                        }
+                    } else {
+                        field.set(laptop, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Laptop updatedLaptop = laptopRepository.save(laptop);
+        return LaptopMapper.convertToDTO(updatedLaptop);
     }
 
     // **5. Xóa Laptop theo ID**
@@ -121,13 +152,5 @@ public class LaptopServiceImpl implements LaptopService {
         laptopRepository.deleteById(id);
     }
 
-    private LaptopDTO convertToDTO(Laptop laptop) {
-        return LaptopDTO.builder()
-                .macId(laptop.getMacId())
-                .status(laptop.getStatus())
-                .laptopModelId(laptop.getLaptopModel() == null ? null
-                        : laptop.getLaptopModel().getId())
-                .mfg(laptop.getMFG())
-                .build();
-    }
+
 }

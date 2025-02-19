@@ -8,12 +8,15 @@ import com.example.demo.Repository.CustomerRepository;
 import com.example.demo.Service.AddressService;
 import com.example.demo.DTO.AddressDTO;
 
+import com.example.demo.mapper.AddressMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -21,12 +24,10 @@ import java.util.stream.Collectors;
 public class AddressServiceImpl implements AddressService{
 
     private final AddressRepository addressRepository;
-    private final ModelMapper modelMapper;
     private final CustomerRepository customerRepository;
 
-    public AddressServiceImpl(AddressRepository addressRepository, ModelMapper modelMapper, CustomerRepository customerRepository) {
+    public AddressServiceImpl(AddressRepository addressRepository, CustomerRepository customerRepository) {
         this.addressRepository = addressRepository;
-        this.modelMapper = modelMapper;
         this.customerRepository = customerRepository;
     }
 
@@ -36,7 +37,7 @@ public class AddressServiceImpl implements AddressService{
     public List<AddressDTO> getAllAddress(UUID customerId) {
         List<Address> addresses = addressRepository.findByCustomerId(customerId);
         return addresses.stream()
-            .map(address -> modelMapper.map(address, AddressDTO.class))
+            .map(AddressMapper::convertToDTO)
             .collect(Collectors.toList());
     }
 
@@ -46,7 +47,7 @@ public class AddressServiceImpl implements AddressService{
     public AddressDTO getAddressById(UUID id) {
         Address address = addressRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Address not found"));
-        return modelMapper.map(address, AddressDTO.class);
+        return AddressMapper.convertToDTO(address);
     }
     
     // Tạo mới địa chỉ
@@ -70,7 +71,7 @@ public class AddressServiceImpl implements AddressService{
 
         Address addressExisting = addressRepository.save(address);
 
-        return convertToDTO(addressExisting);
+        return AddressMapper.convertToDTO(addressExisting);
     }
     
     // Cập nhật thông tin địa chỉ
@@ -83,14 +84,47 @@ public class AddressServiceImpl implements AddressService{
         Address addressToUpdate = addressRepository.findById(idToUpdate)
                 .orElseThrow(() -> new EntityNotFoundException("Address not found"));
 
-        modelMapper.map(updatedAddress, addressToUpdate);
+        addressToUpdate.setId(customer.getId());
+        addressToUpdate.setCity(updatedAddress.getCity());
+        addressToUpdate.setPhone(updatedAddress.getPhone());
+        addressToUpdate.setStreet(updatedAddress.getStreet());
+        addressToUpdate.setDistrict(updatedAddress.getDistrict());
+        addressToUpdate.setWard(updatedAddress.getWard());
+
         addressToUpdate.setId(idToUpdate);
 
         Address addressExisting = addressRepository.save(addressToUpdate);
 
-        return convertToDTO(addressExisting);
+        return AddressMapper.convertToDTO(addressExisting);
     }
 
+    public AddressDTO partialUpdateAddress(UUID id, Map<String, Object> fieldsToUpdate) {
+        Address address = addressRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Address with ID " + id + " not found!"));
+
+        Class<?> clazz = address.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    field.set(address, newValue);
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Address updatedAddress = addressRepository.save(address);
+        return AddressMapper.convertToDTO(updatedAddress);
+    }
 
     // Xóa địa chỉ
     @Transactional
@@ -98,24 +132,14 @@ public class AddressServiceImpl implements AddressService{
     public void deleteAddress(UUID id) {
         Address addressExisting = addressRepository.findById(id)
                         .orElseThrow(() -> new EntityNotFoundException("Address not found"));
-        Customer customerExisting = addressExisting.getCustomer();
-
-        customerExisting.getAddressList().remove(addressExisting);
+//        Customer customerExisting = addressExisting.getCustomer();
+//
+//        customerExisting.getAddressList().remove(addressExisting);
 
         addressRepository.deleteById(id);
 
     }
 
-    private AddressDTO convertToDTO(Address address) {
-        return AddressDTO.builder()
-                .id(address.getId())
-                .customerId(address.getCustomer().getId())
-                .city(address.getCity())
-                .district(address.getDistrict())
-                .ward(address.getWard())
-                .street(address.getStreet())
-                .phone(address.getPhone())
-                .build();
-    }
+
 }
 

@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/laptop-models")
+@RequestMapping("/api/v1/laptop-models")
 public class LaptopModelController {
 
     private final LaptopModelService laptopModelService;
@@ -68,6 +69,15 @@ public class LaptopModelController {
                 .data(laptopModelService.updateLaptopModel(id, laptopModelDTO))
                 .build());
 
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateLaptopModel(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<LaptopModelDTO>builder()
+                .success(true)
+                .message("LaptopModel updated successfully")
+                .data(laptopModelService.partialUpdateLaptopModel(id, fieldsToUpdate))
+                .build());
     }
 
     // 5. Xóa một LaptopModel
