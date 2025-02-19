@@ -7,13 +7,16 @@ import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.PaymentService;
 
+import com.example.demo.mapper.PaymentMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -24,36 +27,23 @@ public class PaymentServiceImpl implements PaymentService {
     private final CustomerRepository customerRepository;
     private final OrderRepository orderRepository;
     private final PaymentMethodRepository paymentMethodRepository;
-    private final ModelMapper modelMapper;
-    private final AccountRepository accountRepository;
 
     public PaymentServiceImpl(
             PaymentRepository paymentRepository,
             CustomerRepository customerRepository,
             OrderRepository orderRepository,
-            PaymentMethodRepository paymentMethodRepository,
-            ModelMapper modelMapper,
-            AccountRepository accountRepository
+            PaymentMethodRepository paymentMethodRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.customerRepository = customerRepository;
         this.orderRepository = orderRepository;
         this.paymentMethodRepository = paymentMethodRepository;
-        this.modelMapper = modelMapper;
-        this.accountRepository = accountRepository;
     }
 
     @Override
     public List<PaymentDTO> getAllPayments() {
         return paymentRepository.findAll().stream()
-                .map(payment -> PaymentDTO.builder()
-                        .id(payment.getId())
-                        .customerId(payment.getCustomer() != null ? payment.getCustomer().getCustomerId().getId() : null)
-                        .orderId(payment.getOrder() != null ? payment.getOrder().getId() : null)
-                        .paymentMethodId(payment.getPaymentMethod() != null ? payment.getPaymentMethod().getId() : null)
-                        .type(payment.getType())
-                        .status(payment.getStatus())
-                        .build())
+                .map(PaymentMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -62,14 +52,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment with ID " + id + " not found!"));
 
-        return PaymentDTO.builder()
-                .id(payment.getId())
-                .customerId(payment.getCustomer() != null ? payment.getCustomer().getCustomerId().getId() : null)
-                .orderId(payment.getOrder() != null ? payment.getOrder().getId() : null)
-                .paymentMethodId(payment.getPaymentMethod() != null ? payment.getPaymentMethod().getId() : null)
-                .type(payment.getType())
-                .status(payment.getStatus())
-                .build();
+        return PaymentMapper.convertToDTO(payment);
     }
 
     @Override
@@ -94,7 +77,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment paymentExisting = paymentRepository.save(payment);
 
-        return convertToDTO(paymentExisting);
+        return PaymentMapper.convertToDTO(paymentExisting);
     }
 
     @Override
@@ -121,8 +104,47 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = paymentRepository.save(existingPayment);
 
-        return convertToDTO(payment);
+        return PaymentMapper.convertToDTO(payment);
     }
+
+    @Override
+    public PaymentDTO partialUpdatePayment(UUID id, Map<String, Object> fieldsToUpdate) {
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Payment with ID " + id + " not found!"));
+
+        Class<?> clazz = payment.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    if (field.getType().isEnum()) {
+                        try {
+                            Object enumValue = Enum.valueOf((Class<Enum>) field.getType(), newValue.toString().toUpperCase());
+                            field.set(payment, enumValue);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid enum value '" + newValue + "' for field: " + fieldName);
+                        }
+                    } else {
+                        field.set(payment, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Payment updatedPayment = paymentRepository.save(payment);
+        return PaymentMapper.convertToDTO(updatedPayment);
+    }
+
 
     @Override
     public void deletePayment(UUID id) {
@@ -132,14 +154,5 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.delete(existingPayment);
     }
 
-    private PaymentDTO convertToDTO(Payment payment) {
-        return PaymentDTO.builder()
-                .id(payment.getId())
-                .customerId(payment.getCustomer() != null ? payment.getCustomer().getCustomerId().getId() : null)
-                .orderId(payment.getOrder() != null ? payment.getOrder().getId() : null)
-                .paymentMethodId(payment.getPaymentMethod() != null ? payment.getPaymentMethod().getId() : null)
-                .type(payment.getType())
-                .status(payment.getStatus())
-                .build();
-    }
+
 }

@@ -9,14 +9,15 @@ import com.example.demo.Repository.LaptopModelRepository;
 import com.example.demo.Repository.SaleRepository;
 import com.example.demo.Service.SaleService;
 
+import com.example.demo.mapper.SaleMapper;
+import jakarta.persistence.Column;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.lang.reflect.Field;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,12 +25,10 @@ public class SaleServiceImpl implements SaleService {
 
     private final SaleRepository saleRepository;
     private final LaptopModelRepository laptopModelRepository;
-    private final ModelMapper modelMapper;
 
-    public SaleServiceImpl(SaleRepository saleRepository, LaptopModelRepository laptopModelRepository, ModelMapper modelMapper) {
+    public SaleServiceImpl(SaleRepository saleRepository, LaptopModelRepository laptopModelRepository) {
         this.saleRepository = saleRepository;
         this.laptopModelRepository = laptopModelRepository;
-        this.modelMapper = modelMapper;
     }
 
     //Lấy danh sách tất cả Sale
@@ -37,17 +36,7 @@ public class SaleServiceImpl implements SaleService {
     @Override
     public List<SaleDTO> getAllSales() {
         return saleRepository.findAll().stream()
-                .map(sale -> SaleDTO.builder()
-                        .id(sale.getId())
-                        .discount(sale.getDiscount())
-                        .endAt(sale.getEndAt())
-                        .startAt(sale.getStartAt())
-                        .eventDescription(sale.getEvent_description() == null ? null : sale.getEvent_description())
-                        .laptopModelIds(sale.getLaptopModelList() == null ? Collections.emptyList() :
-                                sale.getLaptopModelList().stream()
-                                        .map(LaptopModel::getId)
-                                        .collect(Collectors.toList()))
-                        .build())
+                .map(SaleMapper::convertToDTO)
                 .collect(Collectors.toList());
 
     }
@@ -58,17 +47,7 @@ public class SaleServiceImpl implements SaleService {
     public SaleDTO getSaleById(UUID id) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sale not found with ID: " + id));
-        return SaleDTO.builder()
-                .id(sale.getId())
-                .discount(sale.getDiscount())
-                .endAt(sale.getEndAt())
-                .startAt(sale.getStartAt())
-                .eventDescription(sale.getEvent_description() == null ? null : sale.getEvent_description())
-                .laptopModelIds(sale.getLaptopModelList() == null ? Collections.emptyList() :
-                        sale.getLaptopModelList().stream()
-                                .map(LaptopModel::getId)
-                                .collect(Collectors.toList()))
-                .build();
+        return SaleMapper.convertToDTO(sale);
     }
 
     //Tạo mới một Sale
@@ -92,7 +71,7 @@ public class SaleServiceImpl implements SaleService {
         }
         Sale saleExisting = saleRepository.save(sale);
 
-        return convertToDTO(sale);
+        return SaleMapper.convertToDTO(sale);
     }
 
     //cap nhat sale
@@ -102,8 +81,10 @@ public class SaleServiceImpl implements SaleService {
         Sale sale = saleRepository.findById(saleId)
                 .orElseThrow(() -> new EntityNotFoundException("Sale not found"));
 
-        modelMapper.map(saleDTO, sale);
         sale.setId(saleId);
+        sale.setDiscount(saleDTO.getDiscount());
+        sale.setEndAt(saleDTO.getStartAt());
+        sale.setEvent_description(saleDTO.getEventDescription());
 
         if (saleDTO.getLaptopModelIds() != null) {
             List<LaptopModel> laptopModels = saleDTO.getLaptopModelIds().stream()
@@ -114,8 +95,49 @@ public class SaleServiceImpl implements SaleService {
         }
 
         Sale saleExisting = saleRepository.save(sale);
-        return convertToDTO(saleExisting);
+        return SaleMapper.convertToDTO(saleExisting);
     }
+
+    @Transactional
+    @Override
+    public SaleDTO partialUpdateSale(UUID id, Map<String, Object> fieldsToUpdate) {
+        Sale sale = saleRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Sale with ID " + id + " not found!"));
+
+        Class<?> clazz = sale.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    if (field.getType().equals(Date.class)) {
+                        field.set(sale, new Date((Long) newValue)); // Chuyển timestamp thành `Date`
+                    } else if (field.getType().equals(Float.class)) {
+                        field.set(sale, Float.parseFloat(newValue.toString()));
+                    } else if (field.getType().equals(List.class) && fieldName.equals("laptopModelList")) {
+                        List<UUID> laptopModelIds = (List<UUID>) newValue;
+                        List<LaptopModel> laptopModels = laptopModelRepository.findAllById(laptopModelIds);
+                        field.set(sale, laptopModels);
+                    } else {
+                        field.set(sale, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Sale updatedSale = saleRepository.save(sale);
+        return SaleMapper.convertToDTO(updatedSale);
+    }
+
 
     //Xóa Sale theo ID
     @Transactional
@@ -129,17 +151,5 @@ public class SaleServiceImpl implements SaleService {
         saleRepository.delete(sale);
     }
 
-    private SaleDTO convertToDTO(Sale sale) {
-        return SaleDTO.builder()
-                .id(sale.getId())
-                .discount(sale.getDiscount())
-                .endAt(sale.getEndAt())
-                .startAt(sale.getStartAt())
-                .eventDescription(sale.getEvent_description() == null ? null : sale.getEvent_description())
-                .laptopModelIds(sale.getLaptopModelList() == null ? Collections.emptyList() :
-                        sale.getLaptopModelList().stream()
-                                .map(LaptopModel::getId)
-                                .collect(Collectors.toList()))
-                .build();
-    }
+
 }

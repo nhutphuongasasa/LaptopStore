@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/api/v1/payments")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -67,6 +68,16 @@ public class PaymentController {
                 .build());
 
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdatePayment(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<PaymentDTO>builder()
+                .success(true)
+                .message("Payment updated successfully")
+                .data(paymentService.partialUpdatePayment(id, fieldsToUpdate))
+                .build());
+    }
+
 
     // 5. Delete payment by ID
     @DeleteMapping("/{id}")

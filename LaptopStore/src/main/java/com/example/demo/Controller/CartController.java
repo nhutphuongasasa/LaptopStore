@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/carts") // Base URL cho Cart
+@RequestMapping("/api/v1/carts") // Base URL cho Cart
 public class CartController {
 
     private final CartService cartService;
@@ -62,6 +63,21 @@ public class CartController {
                 .data(cartService.updateCart(id, cartDTO))
                 .build());
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DataResponse<CartDTO>> partialUpdateCart(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> fieldsToUpdate) {
+
+        CartDTO updatedCart = cartService.partialUpdateCart(id, fieldsToUpdate);
+
+        return ResponseEntity.ok(DataResponse.<CartDTO>builder()
+                .success(true)
+                .message("Cart updated successfully!")
+                .data(updatedCart)
+                .build());
+    }
+
 
     // 5. API: Xóa Cart theo ID
     @DeleteMapping("/{id}")

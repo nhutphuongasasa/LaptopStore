@@ -6,16 +6,19 @@ import com.example.demo.DTO.OrderDetailDTO;
 import com.example.demo.Models.*;
 import com.example.demo.Repository.*;
 import com.example.demo.Service.OrderService;
+import com.example.demo.mapper.OrderMapper;
 import jakarta.persistence.EntityNotFoundException;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Map;
+
 
 @Service
 
@@ -34,22 +37,7 @@ public class OrderServiceImpl implements OrderService {
 
     public List<OrderDTO> getAllOrders() {
         return orderRepository.findAll().stream()
-                .map(order -> OrderDTO.builder()
-                        .id(order.getId())
-                        .customerId(order.getCustomer().getId())
-                        .dateCreate(order.getDateCreate())
-                        .status(order.getStatus())
-                        .orderDetails(order.getOrderDetailList() == null
-                                ? Collections.emptyList()
-                                : order.getOrderDetailList().stream()
-                                .map(OrderDetail::getId)
-                                .collect(Collectors.toList()))
-                        .payments(order.getPaymentList() == null
-                                ? Collections.emptyList()
-                                : order.getPaymentList().stream()
-                                .map(Payment::getId)
-                                .collect(Collectors.toList()))
-                        .build())
+                .map(OrderMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -59,22 +47,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found!"));
 
-        return OrderDTO.builder()
-                .id(order.getId())
-                .customerId(order.getCustomer().getId())
-                .dateCreate(order.getDateCreate())
-                .status(order.getStatus())
-                .orderDetails(order.getOrderDetailList() == null
-                        ? Collections.emptyList()
-                        : order.getOrderDetailList().stream()
-                        .map(OrderDetail::getId)
-                        .collect(Collectors.toList()))
-                .payments(order.getPaymentList() == null
-                        ? Collections.emptyList()
-                        : order.getPaymentList().stream()
-                        .map(Payment::getId)
-                        .collect(Collectors.toList()))
-                .build();
+        return OrderMapper.convertToDTO(order);
     }
 
     @Transactional
@@ -93,7 +66,7 @@ public class OrderServiceImpl implements OrderService {
 
         Order orderExisting = orderRepository.save(order);
 
-        return convertToDTO(orderExisting);
+        return OrderMapper.convertToDTO(orderExisting);
     }
 
 
@@ -142,7 +115,45 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository.save(existingOrder);
 
-        return convertToDTO(order);
+        return OrderMapper.convertToDTO(order);
+    }
+
+    @Override
+    public OrderDTO partialUpdateOrder(UUID id, Map<String, Object> fieldsToUpdate) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order with ID " + id + " not found!"));
+
+        Class<?> clazz = order.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    if (field.getType().isEnum()) {
+                        try {
+                            Object enumValue = Enum.valueOf((Class<Enum>) field.getType(), newValue.toString());
+                            field.set(order, enumValue);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid enum value for field: " + fieldName);
+                        }
+                    } else {
+                        field.set(order, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        Order updatedOrder = orderRepository.save(order);
+        return OrderMapper.convertToDTO(updatedOrder);
     }
 
     @Override
@@ -155,20 +166,5 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.delete(existingOrder);
     }
 
-    private OrderDTO convertToDTO(Order order) {
-        return OrderDTO.builder()
-                .id(order.getId())
-                .payments(order.getPaymentList() == null ? null :
-                        order.getPaymentList().stream()
-                                .map(Payment::getId)
-                                .collect(Collectors.toList()))
-                .orderDetails(order.getOrderDetailList() == null ? null :
-                        order.getOrderDetailList().stream()
-                                .map(OrderDetail::getId)
-                                .collect(Collectors.toList()))
-                .status(order.getStatus())
-                .dateCreate(order.getDateCreate())
-                .customerId(order.getCustomer().getId())
-                .build();
-    }
+
 }

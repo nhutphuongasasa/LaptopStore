@@ -8,10 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/chats")
+@RequestMapping("/api/v1/chats")
 public class ChatController {
 
     private final ChatService chatService;
@@ -68,6 +69,21 @@ public class ChatController {
                 .data(chatService.updateChat(id, chatDTO))
                 .build());
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DataResponse<ChatDTO>> partialUpdateChat(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> fieldsToUpdate) {
+
+        ChatDTO updatedChat = chatService.partialUpdateChat(id, fieldsToUpdate);
+
+        return ResponseEntity.ok(DataResponse.<ChatDTO>builder()
+                .success(true)
+                .message("Chat updated successfully!")
+                .data(updatedChat)
+                .build());
+    }
+
 
     // Xóa chat
     @DeleteMapping("/{id}")

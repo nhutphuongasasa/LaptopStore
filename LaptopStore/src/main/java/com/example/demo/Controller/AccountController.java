@@ -8,10 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/api/v1/accounts")
 public class AccountController {
 
     private final AccountService accountService;
@@ -64,6 +65,19 @@ public class AccountController {
                     .data(accountService.updateAccount(id, updatedAccount))
                     .build());
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DataResponse<?>> partialUpdateAccount(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> fieldsToUpdate ) {
+
+        return ResponseEntity.ok(DataResponse.<AccountDTO>builder()
+                .success(true)
+                .message("Account updated successfully!")
+                .data(accountService.partialUpdateAccount(id, fieldsToUpdate ))
+                .build());
+    }
+
 
     // Xóa tài khoản
     @DeleteMapping("/{id}")

@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/laptops")
+@RequestMapping("/api/v1/laptops")
 public class LaptopController {
 
     private final LaptopService laptopService;
@@ -60,6 +61,15 @@ public class LaptopController {
                 .success(true)
                 .message("Laptop updated successfully")
                 .data(laptopService.updateLaptop(id,laptopDTO))
+                .build());
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> partialUpdateLaptop(@PathVariable UUID id, @RequestBody Map<String, Object> fieldsToUpdate) {
+        return ResponseEntity.ok(DataResponse.<LaptopDTO>builder()
+                .success(true)
+                .message("Laptop updated successfully")
+                .data(laptopService.partialUpdateLaptop(id, fieldsToUpdate))
                 .build());
     }
 

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/laptop-on-carts")
+@RequestMapping("/api/v1/laptop-on-carts")
 public class LaptopOnCartController {
 
     private final LaptopOnCartService laptopOnCartService;

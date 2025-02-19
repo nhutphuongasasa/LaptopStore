@@ -10,12 +10,15 @@ import com.example.demo.Models.Sale;
 import com.example.demo.Repository.PaymentMethodRepository;
 import com.example.demo.Service.PaymentMethodService;
 
+import com.example.demo.mapper.PaymentMethodMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +31,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
 
     private final PaymentMethodRepository paymentMethodRepository;
 
-    public PaymentMethodServiceImpl(PaymentMethodRepository paymentMethodRepository, ModelMapper modelMapper) {
+    public PaymentMethodServiceImpl(PaymentMethodRepository paymentMethodRepository) {
         this.paymentMethodRepository = paymentMethodRepository;
     }
 
@@ -78,7 +81,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
 
         PaymentMethod paymentMethodExisting = paymentMethodRepository.save(paymentMethod);
 
-        return convertToDTO(paymentMethodExisting);
+        return PaymentMethodMapper.convertToDTO(paymentMethodExisting);
     }
 
     // Cập nhật PaymentMethod
@@ -93,8 +96,47 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
         existingPaymentMethod.setType(Enums.PaymentType.valueOf(paymentMethodDTO.getType().name()));
 
         PaymentMethod paymentMethodExisting = paymentMethodRepository.save(existingPaymentMethod);
-        return convertToDTO(paymentMethodExisting);
+        return PaymentMethodMapper.convertToDTO(paymentMethodExisting);
     }
+
+    @Override
+    public PaymentMethodDTO partialUpdatePaymentMethod(UUID id, Map<String, Object> fieldsToUpdate) {
+        PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("PaymentMethod with ID " + id + " not found!"));
+
+        Class<?> clazz = paymentMethod.getClass();
+
+        for (Map.Entry<String, Object> entry : fieldsToUpdate.entrySet()) {
+            String fieldName = entry.getKey();
+            Object newValue = entry.getValue();
+
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (newValue != null) {
+                    if (field.getType().isEnum()) {
+                        try {
+                            Object enumValue = Enum.valueOf((Class<Enum>) field.getType(), newValue.toString().toUpperCase());
+                            field.set(paymentMethod, enumValue);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid enum value '" + newValue + "' for field: " + fieldName);
+                        }
+                    } else {
+                        field.set(paymentMethod, newValue);
+                    }
+                }
+            } catch (NoSuchFieldException e) {
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to update field: " + fieldName, e);
+            }
+        }
+
+        PaymentMethod updatedPaymentMethod = paymentMethodRepository.save(paymentMethod);
+        return PaymentMethodMapper.convertToDTO(updatedPaymentMethod);
+    }
+
 
     // Xóa PaymentMethod theo ID
     @Override
@@ -105,11 +147,5 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
         paymentMethodRepository.delete(paymentMethod);
     }
 
-    private PaymentMethodDTO convertToDTO(PaymentMethod paymentMethod) {
-        return PaymentMethodDTO.builder()
-                .id(paymentMethod.getId())
-                .type(paymentMethod.getType())
-                .data(paymentMethod.getData())
-                .build();
-    }
+
 }

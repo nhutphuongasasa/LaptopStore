@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/addresses")
+@RequestMapping("/api/v1/addresses")
 public class AddressController {
 
     private final AddressService addressService;
@@ -60,6 +61,21 @@ public class AddressController {
                     .data(addressService.updateAddress(id,updatedAddress))
                     .build());
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DataResponse<AddressDTO>> partialUpdateAddress(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> fieldsToUpdate) {
+
+        AddressDTO updatedAddress = addressService.partialUpdateAddress(id, fieldsToUpdate);
+
+        return ResponseEntity.ok(DataResponse.<AddressDTO>builder()
+                .success(true)
+                .message("Address updated successfully!")
+                .data(updatedAddress)
+                .build());
+    }
+
 
     // Xóa địa chỉ
     @DeleteMapping("/{id}")
